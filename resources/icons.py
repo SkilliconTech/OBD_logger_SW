@@ -1,11 +1,12 @@
+import base64
+
 from PySide6.QtCore import Qt, QRectF, QPointF, QSize
 from PySide6.QtGui import (
-    QPainter, QPainterPath, QColor, QPixmap, QIcon, QTransform,
-    QLinearGradient, QFont, QPen
+    QPainter, QPainterPath, QColor, QPixmap, QIcon, QTransform, QPen
 )
 
-import base64
 from resources.logo_data import _LOGO_B64
+
 
 def make_theme_icon(dark_mode: bool, color: str, size: int = 18) -> QIcon:
     """Moon icon in light mode, sun icon in dark mode."""
@@ -96,3 +97,10 @@ def trash_pixmap(size: int = 64) -> QPixmap:
     p.drawLine(QPointF(37 * s, 27 * s), QPointF(37 * s, 45 * s))
     p.end()
     return pm
+
+
+def logo_icon() -> QIcon:
+    """Company logo, loaded from the base64 image in resources/logo_data.py."""
+    pm = QPixmap()
+    pm.loadFromData(base64.b64decode(_LOGO_B64))
+    return QIcon(pm)
