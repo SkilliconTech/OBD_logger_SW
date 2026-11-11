@@ -297,27 +297,8 @@ class ObdMainWindow(QMainWindow):
         self.content_stack.addWidget(widget)
 
     def _build_tree(self):
+        """Configuration tree: empty for now. Add your own items here later."""
         self.new_tree.clear()
-        # Example structure. Replace the names with your own.
-        group = QTreeWidgetItem(["Vehicle"])
-        for name in ("Vehicle Info", "Live Data"):
-            group.addChild(QTreeWidgetItem([name]))
-        self.new_tree.addTopLevelItem(group)
-        group.setExpanded(True)
-
-        group2 = QTreeWidgetItem(["Diagnostics"])
-        for name in ("Trouble Codes", "Freeze Frame"):
-            group2.addChild(QTreeWidgetItem([name]))
-        self.new_tree.addTopLevelItem(group2)
-        group2.setExpanded(True)
-
-        self.new_tree.addTopLevelItem(QTreeWidgetItem(["Generate Report"]))
-
-        # placeholder pages: swap for your real widgets with add_page()
-        for name in ("Vehicle Info", "Live Data", "Trouble Codes", "Freeze Frame"):
-            page = QLabel(f"{name} page")
-            page.setAlignment(Qt.AlignCenter)
-            self.add_page(name, page)
 
     def on_tree_item_clicked(self, item, column):
         if item.childCount() > 0:                    # parent row: expand/collapse
