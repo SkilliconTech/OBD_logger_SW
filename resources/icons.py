@@ -4,8 +4,8 @@ from PySide6.QtGui import (
     QLinearGradient, QFont, QPen
 )
 
-from resources.theme import LOGO_GOLD_1, LOGO_GOLD_2
-
+import base64
+from resources.logo_data import _LOGO_B64
 
 def make_theme_icon(dark_mode: bool, color: str, size: int = 18) -> QIcon:
     """Moon icon in light mode, sun icon in dark mode."""
@@ -96,28 +96,3 @@ def trash_pixmap(size: int = 64) -> QPixmap:
     p.drawLine(QPointF(37 * s, 27 * s), QPointF(37 * s, 45 * s))
     p.end()
     return pm
-
-
-def logo_icon(text: str = "OBD TOOL", width: int = 184, height: int = 34) -> QIcon:
-    """Simple gold text logo. Replace with your own logo image later."""
-    scale = 2
-    pm = QPixmap(width * scale, height * scale)
-    pm.fill(Qt.transparent)
-
-    p = QPainter(pm)
-    p.setRenderHint(QPainter.Antialiasing)
-    p.setRenderHint(QPainter.TextAntialiasing)
-
-    grad = QLinearGradient(0, 0, 0, height * scale)
-    grad.setColorAt(0.0, QColor(LOGO_GOLD_1))
-    grad.setColorAt(1.0, QColor(LOGO_GOLD_2))
-
-    font = QFont("Segoe UI", 15 * scale // 2)
-    font.setBold(True)
-    font.setLetterSpacing(QFont.AbsoluteSpacing, 2 * scale)
-    p.setFont(font)
-    p.setPen(QPen(grad, 1))
-    p.drawText(QRectF(0, 0, width * scale, height * scale),
-               Qt.AlignRight | Qt.AlignVCenter, text)
-    p.end()
-    return QIcon(pm)

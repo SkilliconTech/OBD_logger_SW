@@ -1,8 +1,8 @@
 import os
 
-from PySide6.QtCore import Qt, QSize, QRect, QEvent, QTimer
+from PySide6.QtCore import Qt, QSize, QRect, QEvent, QTimer, QUrl
 from PySide6.QtGui import (
-    QFont, QColor, QAction, QShortcut, QKeySequence, QPainter
+    QFont, QColor, QAction, QShortcut, QKeySequence, QPainter, QDesktopServices
 )
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QLabel, QPushButton, QFrame, QListWidget,
@@ -17,6 +17,7 @@ from views.tree_delegate import ModernTreeDelegate
 from views.slide_switch import SlideSwitch
 
 APP_TITLE = "OBD Tool"
+COMPANY_URL = "https://skillicon.in/"
 
 
 class NewFileDelegate(QStyledItemDelegate):
@@ -264,6 +265,8 @@ class ObdMainWindow(QMainWindow):
         self.brand_btn.setFlat(True)
         self.brand_btn.setIcon(logo_icon())
         self.brand_btn.setIconSize(QSize(184, 34))
+        self.brand_btn.setToolTip("Visit skillicon.in")
+        self.brand_btn.clicked.connect(self.on_logo_clicked)
         topbar.addWidget(self.brand_btn)
         ml.addLayout(topbar)
 
@@ -399,6 +402,9 @@ class ObdMainWindow(QMainWindow):
 
     def on_help(self):
         QMessageBox.information(self, "Help", "Add your help text here.")
+
+    def on_logo_clicked(self):
+        QDesktopServices.openUrl(QUrl(COMPANY_URL))
 
     def _show_save_menu(self):
         self._save_menu.exec(self.save_arrow_button.mapToGlobal(
