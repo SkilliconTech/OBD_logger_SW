@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt, QRectF, QPointF
+from PySide6.QtCore import Qt, QRect, QRectF, QPointF
 from PySide6.QtGui import QPainter, QColor, QFont, QPen
 from PySide6.QtWidgets import QStyledItemDelegate, QStyle
 
@@ -11,6 +11,15 @@ class ModernTreeDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.colors = LIGHT
+
+    CHECK_SIZE = 16
+
+    @classmethod
+    def check_rect(cls, item_rect):
+        """Square for the checkbox, at the left of a row."""
+        return QRect(item_rect.left() + 10,
+                     item_rect.center().y() - cls.CHECK_SIZE // 2,
+                     cls.CHECK_SIZE, cls.CHECK_SIZE)
 
     def set_colors(self, colors):
         self.colors = colors
@@ -88,6 +97,34 @@ class ModernTreeDelegate(QStyledItemDelegate):
                     QPointF(cx - 2, cy + 4),
                 ])
 
+        # Checkbox (only rows that have a check state)
+        text_offset = 28
+        check_state = index.data(Qt.CheckStateRole)
+        if check_state is not None:
+            text_offset = 38
+            checked = check_state in (Qt.Checked, 2)
+            box = QRectF(self.check_rect(option.rect))
+            if checked:
+                painter.setPen(Qt.NoPen)
+                painter.setBrush(QColor(c["accent_blue"]))
+                painter.drawRoundedRect(box, 3, 3)
+                tick = QPen(QColor("#FFFFFF"))
+                tick.setWidthF(1.8)
+                tick.setCapStyle(Qt.RoundCap)
+                tick.setJoinStyle(Qt.RoundJoin)
+                painter.setPen(tick)
+                painter.setBrush(Qt.NoBrush)
+                painter.drawPolyline([
+                    QPointF(box.left() + 3.5, box.center().y()),
+                    QPointF(box.left() + 6.5, box.center().y() + 3),
+                    QPointF(box.right() - 3, box.top() + 4.5),
+                ])
+            else:
+                border = QPen(QColor(c["text_secondary"]))
+                border.setWidthF(1.4)
+                painter.setPen(border)
+                painter.setBrush(Qt.NoBrush)
+                painter.drawRoundedRect(box.adjusted(0.7, 0.7, -0.7, -0.7), 3, 3)
         # Text
         font = QFont()
         font.setFamilies(["Segoe UI Variable Text", "Segoe UI", "Arial"])
@@ -101,7 +138,7 @@ class ModernTreeDelegate(QStyledItemDelegate):
         )
 
         text_rect = QRectF(
-            x + 28,
+            x + text_offset,
             option.rect.top(),
             max(10, full_width - x - 36),
             option.rect.height()

@@ -15,6 +15,9 @@ from resources.theme import LIGHT, DARK, RADIUS_SM, RADIUS_LG, FONT_FAMILY
 from resources.icons import make_theme_icon, trash_pixmap, logo_icon
 from views.tree_delegate import ModernTreeDelegate
 from views.slide_switch import SlideSwitch
+from models.modes import MODES
+from views.mode_page import ModePage
+from views.mode_tree import ModeTree
 from views.standard_tree import StandardTree
 
 APP_TITLE = "OBD Tool"
@@ -60,6 +63,7 @@ class ObdMainWindow(QMainWindow):
         self.pages = {}              # tree-item name -> page widget
         self._current_page = None
         self.imported_files = []
+        self.selected_modes = []
         self.selected_standard = None
         self.setWindowTitle(APP_TITLE)
         self.resize(1400, 950)
@@ -197,7 +201,7 @@ class ObdMainWindow(QMainWindow):
         self.config_label.setFont(section_font)
         cl.addWidget(self.config_label)
 
-        self.new_tree = QTreeWidget()
+        self.new_tree = ModeTree()
         self.new_tree.setHeaderHidden(True)
         self.new_tree.setRootIsDecorated(False)
         self.new_tree.setIndentation(16)
@@ -211,6 +215,7 @@ class ObdMainWindow(QMainWindow):
         self.tree_delegate = ModernTreeDelegate(self.new_tree)
         self.new_tree.setItemDelegate(self.tree_delegate)
         self.new_tree.itemClicked.connect(self.on_tree_item_clicked)
+        self.new_tree.modes_changed.connect(self.on_modes_changed)
         cl.addWidget(self.new_tree, 1)
         lay.addWidget(self.config_section, 1)
         return self.sidebar
@@ -305,8 +310,15 @@ class ObdMainWindow(QMainWindow):
         self.content_stack.addWidget(widget)
 
     def _build_tree(self):
-        """Configuration tree: empty for now. Add your own items here later."""
-        self.new_tree.clear()
+        """Modes list: one checkbox row and one page per mode."""
+        self.new_tree.add_modes(MODES)
+        for code in MODES:
+            self.add_page(code, ModePage(code))
+
+    def on_modes_changed(self, modes):
+        self.selected_modes = modes                  # e.g. ["01", "05"]
+        self.statusBar().showMessage(
+            "Selected modes: " + (", ".join(modes) or "none"), 3000)
     def on_standard_selected(self, name):
         self.selected_standard = os.name                # J1979-1 / J1979-2 / J1979-3
         self.statusBar().showMessage(f"Standard selected: {name}", 3000)
