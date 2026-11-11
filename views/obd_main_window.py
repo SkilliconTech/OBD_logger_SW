@@ -15,7 +15,7 @@ from resources.theme import LIGHT, DARK, RADIUS_SM, RADIUS_LG, FONT_FAMILY
 from resources.icons import make_theme_icon, trash_pixmap, logo_icon
 from views.tree_delegate import ModernTreeDelegate
 from views.slide_switch import SlideSwitch
-from views.standard_tree import StandardTree, StandardTrees
+from views.standard_tree import StandardTree
 
 APP_TITLE = "OBD Tool"
 COMPANY_URL = "https://skillicon.in/"
@@ -141,8 +141,8 @@ class ObdMainWindow(QMainWindow):
         self.imported_list.setObjectName("importedList")
         self.imported_list.setUniformItemSizes(True)
         self.imported_list.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.imported_list.setMinimumHeight(110)
-        self.imported_list.setMaximumHeight(150)
+        self.imported_list.setMinimumHeight(70)
+        self.imported_list.setMaximumHeight(100)
         self.imported_list.setItemDelegate(NewFileDelegate(self.imported_list))
         self.imported_list.itemClicked.connect(self.on_file_clicked)
         sc = QShortcut(QKeySequence("Delete"), self.imported_list)

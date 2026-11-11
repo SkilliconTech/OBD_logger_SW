@@ -30,7 +30,7 @@ class StandardTree(QTreeWidget):
         for name in STANDARDS:
             self._group.addChild(QTreeWidgetItem([name]))
         self.addTopLevelItem(self._group)
-        self._group.setExpanded(True)
+        self._group.setExpanded(False)
 
         self.itemClicked.connect(self._on_item_clicked)
         self.itemExpanded.connect(self._update_height)
