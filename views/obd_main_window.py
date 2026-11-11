@@ -15,6 +15,7 @@ from resources.theme import LIGHT, DARK, RADIUS_SM, RADIUS_LG, FONT_FAMILY
 from resources.icons import make_theme_icon, trash_pixmap, logo_icon
 from views.tree_delegate import ModernTreeDelegate
 from views.slide_switch import SlideSwitch
+from views.standard_tree import StandardTree, StandardTrees
 
 APP_TITLE = "OBD Tool"
 COMPANY_URL = "https://skillicon.in/"
@@ -59,7 +60,7 @@ class ObdMainWindow(QMainWindow):
         self.pages = {}              # tree-item name -> page widget
         self._current_page = None
         self.imported_files = []
-
+        self.selected_standard = None
         self.setWindowTitle(APP_TITLE)
         self.resize(1400, 950)
         self._create_actions()
@@ -119,7 +120,11 @@ class ObdMainWindow(QMainWindow):
         section_font.setFamilies(["Segoe UI Variable Text", "Segoe UI", "Arial"])
         section_font.setPointSizeF(10.5)
         section_font.setWeight(QFont.DemiBold)
-
+        # ---- Standard tree (above the imported files) ----
+        self.standard_tree = StandardTree()
+        self.standard_tree.standard_selected.connect(self.on_standard_selected)
+        lay.addWidget(self.standard_tree)
+        lay.addSpacing(12)
         # ---- Section 1: imported files ----
         self.imported_section = QFrame()
         self.imported_section.setObjectName("importedSection")
@@ -302,7 +307,9 @@ class ObdMainWindow(QMainWindow):
     def _build_tree(self):
         """Configuration tree: empty for now. Add your own items here later."""
         self.new_tree.clear()
-
+    def on_standard_selected(self, name):
+        self.selected_standard = os.name                # J1979-1 / J1979-2 / J1979-3
+        self.statusBar().showMessage(f"Standard selected: {name}", 3000)
     def on_tree_item_clicked(self, item, column):
         if item.childCount() > 0:                    # parent row: expand/collapse
             item.setExpanded(not item.isExpanded())
@@ -500,6 +507,7 @@ class ObdMainWindow(QMainWindow):
         self.new_tree.setStyleSheet(
             "QTreeWidget { background-color: transparent; border: none; outline: 0; }")
         self.tree_delegate.set_colors(c)
+        self.standard_tree.apply_theme(c)
         self.new_tree.viewport().update()
         self.statusBar().setStyleSheet(
             f"QStatusBar {{ background-color: {c['bg_panel']};"
