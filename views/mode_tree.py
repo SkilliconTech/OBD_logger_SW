@@ -5,10 +5,16 @@ from views.tree_delegate import ModernTreeDelegate
 from models.pid_directory import get_mode_info
 
 
-class ModeTree(QTreeWidget):
-    """List of modes. Only selectable modes get a checkbox."""
+# Modes that must be gray + non-accessible
+BLOCKED_MODES = {"05", "08"}
 
-    modes_changed = Signal(list)        # emits e.g. ["01", "09"]
+
+class ModeTree(QTreeWidget):
+    """List of modes. Only selectable modes get a checkbox.
+    Mode $05 and $08 are blocked (gray + non-accessible).
+    """
+
+    modes_changed = Signal(list)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -19,14 +25,17 @@ class ModeTree(QTreeWidget):
         for code in modes:
             info = get_mode_info(code)
             item = QTreeWidgetItem([f"Mode ${code}"])
-            item.setData(0, Qt.UserRole, code)           # real code: "01"
+            item.setData(0, Qt.UserRole, code)                 # real code
+            item.setData(0, Qt.UserRole + 1, code in BLOCKED_MODES)  # blocked flag
 
-            if info.selectable:
-                # $01, $02, $09 → keep checkbox
+            if code in BLOCKED_MODES:
+                # No checkbox + disabled look
+                item.setFlags(item.flags() & ~Qt.ItemIsUserCheckable & ~Qt.ItemIsEnabled)
+                item.setData(0, Qt.CheckStateRole, None)
+            elif info.selectable:
                 item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
                 item.setCheckState(0, Qt.Unchecked)
             else:
-                # $03, $04, $05, $06, $07, $08, $0A → no checkbox
                 item.setFlags(item.flags() & ~Qt.ItemIsUserCheckable)
                 item.setData(0, Qt.CheckStateRole, None)
 
@@ -41,7 +50,11 @@ class ModeTree(QTreeWidget):
         pos = event.position().toPoint()
         item = self.itemAt(pos)
         if item is not None and event.button() == Qt.LeftButton:
-            # Only toggle if this item is checkable
+            # Blocked modes → do nothing here (main window will show prohibition)
+            if item.data(0, Qt.UserRole + 1):
+                super().mousePressEvent(event)
+                return
+
             if item.flags() & Qt.ItemIsUserCheckable:
                 box = ModernTreeDelegate.check_rect(self.visualItemRect(item))
                 if box.adjusted(-6, -8, 6, 8).contains(pos):
