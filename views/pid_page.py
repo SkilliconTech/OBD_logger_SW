@@ -73,9 +73,9 @@ class PidPage(QWidget):
         self.count_label = QLabel("")
         self.count_label.setObjectName("pidCount")
         if self.info.selectable:
-            select_btn = QPushButton("Select shown")
+            select_btn = QPushButton("Select all")
             clear_btn = QPushButton("Clear all")
-            select_btn.clicked.connect(lambda: self._set_checks(Qt.Checked, True))
+            select_btn.clicked.connect(lambda: self._set_checks(Qt.Checked, False))
             clear_btn.clicked.connect(lambda: self._set_checks(Qt.Unchecked, False))
             row.addWidget(select_btn)
             row.addWidget(clear_btn)
