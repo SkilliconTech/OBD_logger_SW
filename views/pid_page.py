@@ -1,38 +1,55 @@
-from PySide6.QtCore import Qt, Signal, QTimer
+from PySide6.QtCore import Qt, Signal, QTimer, QRect
+from PySide6.QtGui import QPainter, QColor, QPen
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
-    QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView
+    QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView,
+    QStyledItemDelegate, QStyleOptionViewItem
 )
 
 from models.pid_directory import get_entries, get_mode_info
 from resources.theme import LIGHT
-from resources.icons import checked_indicator_pixmap
+from resources.icons import draw_checked_box
 
-_ID_ROLE = Qt.UserRole          # raw ID ("0C") stored on the first cell of a row
+_ID_ROLE = Qt.UserRole
+
+
+class CheckBoxDelegate(QStyledItemDelegate):
+    SIZE = 16
+
+    def paint(self, painter, option, index):
+        opt = QStyleOptionViewItem(option)
+        self.initStyleOption(opt, index)
+
+        is_checkable = bool(index.flags() & Qt.ItemIsUserCheckable)
+        checked = False
+        if is_checkable and (opt.features & QStyleOptionViewItem.HasCheckIndicator):
+            checked = (opt.checkState == Qt.Checked)
+            opt.features &= ~QStyleOptionViewItem.HasCheckIndicator
+
+        super().paint(painter, opt, index)
+
+        if is_checkable and index.column() == 0:
+            rect = QRect(
+                option.rect.left() + 6,
+                option.rect.center().y() - self.SIZE // 2,
+                self.SIZE,
+                self.SIZE
+            )
+            if checked:
+                draw_checked_box(painter, rect, "#4181EF")
+            else:
+                painter.save()
+                painter.setRenderHint(QPainter.Antialiasing)
+                border = QPen(QColor("#6B7280"))
+                border.setWidthF(1.5)
+                painter.setPen(border)
+                painter.setBrush(Qt.NoBrush)
+                painter.drawRoundedRect(rect.adjusted(0, 0, -1, -1), 3, 3)
+                painter.restore()
 
 
 class PidPage(QWidget):
-    """Right-hand page for one mode: heading, search box and a table of IDs.
-
-    Modes 01, 02 and 09 have a checkbox per row. Modes 05, 06 and 08 are a
-    read-only reference. Modes 03, 04, 07 and 0A only show a short message.
-    """
-
-    pids_changed = Signal(str, list)        # mode code, e.g. ("01", ["0C", "0D"])
-
-    _check_icon_path = None
-
-    @classmethod
-    def _get_check_icon_path(cls, accent_color):
-        if cls._check_icon_path is None:
-            import tempfile, os
-            pm = checked_indicator_pixmap(16, accent_color)
-            fd, path = tempfile.mkstemp(suffix=".png")
-            os.close(fd)
-            pm.save(path)
-            cls._check_icon_path = path
-        return cls._check_icon_path
-
+    pids_changed = Signal(str, list)
 
     def __init__(self, mode, parent=None):
         super().__init__(parent)
@@ -43,7 +60,6 @@ class PidPage(QWidget):
         self._build_ui()
         self.apply_theme(LIGHT)
 
-    # ------------------------------------------------------------------ build
     def _build_ui(self):
         lay = QVBoxLayout(self)
         lay.setContentsMargins(20, 16, 20, 16)
@@ -117,8 +133,9 @@ class PidPage(QWidget):
         header.setSectionResizeMode(2, QHeaderView.Stretch)
         self.table.setColumnWidth(1, 260)
 
+        self.table.setItemDelegateForColumn(0, CheckBoxDelegate(self.table))
+
         for row, entry in enumerate(self.entries):
-            # single IDs are shown as "$0C"; ranges and labels are shown as they are
             shown = f"${entry.ident}" if len(entry.ident) <= 2 else entry.ident
             id_item = QTableWidgetItem(shown)
             id_item.setData(_ID_ROLE, entry.ident)
@@ -142,7 +159,6 @@ class PidPage(QWidget):
             self.table.cellClicked.connect(self._on_cell_clicked)
             self._update_count()
 
-    # -------------------------------------------------------------- selection
     def checked_pids(self):
         if self.table is None or not self.info.selectable:
             return []
@@ -161,7 +177,7 @@ class PidPage(QWidget):
             self.pids_changed.emit(self.mode, self.checked_pids())
 
     def _on_cell_clicked(self, row, column):
-        if column != 0:                              # clicking the text ticks too
+        if column != 0:
             id_item = self.table.item(row, 0)
             id_item.setCheckState(
                 Qt.Unchecked if id_item.checkState() == Qt.Checked else Qt.Checked)
@@ -184,7 +200,6 @@ class PidPage(QWidget):
                 self.table.item(r, c).text() for c in range(3)).lower()
             self.table.setRowHidden(r, bool(text) and text not in haystack)
 
-    # ------------------------------------------------------------ row heights
     def _fit_rows(self):
         if self.table is not None:
             QTimer.singleShot(0, self.table.resizeRowsToContents)
@@ -197,7 +212,6 @@ class PidPage(QWidget):
         super().showEvent(event)
         self._fit_rows()
 
-    # ------------------------------------------------------------------ theme
     def apply_theme(self, c):
         self.setStyleSheet(f"""
             QLabel#pidHeading {{ color: {c['text_primary']};
@@ -218,15 +232,8 @@ class PidPage(QWidget):
             QTableWidget::item {{ padding: 4px 8px; }}
             QTableWidget::item:hover {{ background-color: {c['border']}; }}
             QTableWidget::indicator {{
-                width: 16px; height: 16px;
-                border: 1.5px solid {c['text_secondary']};
-                border-radius: 3px;
-                background: transparent;
-            }}
-            QTableWidget::indicator:checked {{
-                border: none;
-                background: transparent;
-                image: url({self._get_check_icon_path(c['accent_blue'])});
+                width: 0px;
+                height: 0px;
             }}
             QHeaderView::section {{ background-color: {c['bg_panel']};
                 color: {c['text_secondary']}; border: none;

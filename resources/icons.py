@@ -135,3 +135,28 @@ def checked_indicator_pixmap(size=16, color="#3B82F6"):
     ])
     p.end()
     return pm
+
+def draw_checked_box(painter, rect, color="#4181EF"):
+    """Draw a blue rounded square with white checkmark."""
+    painter.save()
+    painter.setRenderHint(QPainter.Antialiasing)
+
+    painter.setPen(Qt.NoPen)
+    painter.setBrush(QColor(color))
+    painter.drawRoundedRect(rect, 3, 3)
+
+    tick = QPen(QColor("#FFFFFF"))
+    tick.setWidthF(1.8)
+    tick.setCapStyle(Qt.RoundCap)
+    tick.setJoinStyle(Qt.RoundJoin)
+    painter.setPen(tick)
+    painter.setBrush(Qt.NoBrush)
+
+    x, y, w, h = rect.x(), rect.y(), rect.width(), rect.height()
+    painter.drawPolyline([
+        QPointF(x + 3.5, y + h / 2),
+        QPointF(x + 6.5, y + h / 2 + 3),
+        QPointF(x + w - 3.0, y + 4.5),
+    ])
+    painter.restore()
+    
