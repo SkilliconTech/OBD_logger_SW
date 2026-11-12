@@ -16,7 +16,7 @@ from resources.icons import make_theme_icon, trash_pixmap, logo_icon
 from views.tree_delegate import ModernTreeDelegate
 from views.slide_switch import SlideSwitch
 from models.modes import MODES
-from views.mode_page import ModePage
+from views.pid_page import PidPage
 from views.mode_tree import ModeTree
 
 
@@ -64,6 +64,7 @@ class ObdMainWindow(QMainWindow):
         self._current_page = None
         self.imported_files = []
         self.selected_modes = []
+        self.selected_pids = {}
         self.setWindowTitle(APP_TITLE)
         self.resize(1400, 950)
         self._create_actions()
@@ -306,13 +307,22 @@ class ObdMainWindow(QMainWindow):
     def _build_tree(self):
         """Modes list: one checkbox row and one page per mode."""
         self.new_tree.add_modes(MODES)
+        c = DARK if self.dark_mode else LIGHT
         for code in MODES:
-            self.add_page(f"Mode {code}", ModePage(code))
-
+            page = PidPage(code)
+            page.pids_changed.connect(self.on_pids_changed)
+            page.apply_theme(c)
+            self.add_page(f"Mode {code}", page)
     def on_modes_changed(self, modes):
         self.selected_modes = modes                  # e.g. ["01", "05"]
         self.statusBar().showMessage(
             "Selected modes: " + (", ".join(modes) or "none"), 3000)
+
+    def on_pids_changed(self, mode, pids):
+        self.selected_pids[mode] = pids
+        self.statusBar().showMessage(
+            f"Mode {mode}: " + (", ".join(pids) or "no PIDs selected"), 3000)
+        
     def on_tree_item_clicked(self, item, column):
         if item.childCount() > 0:                    # parent row: expand/collapse
             item.setExpanded(not item.isExpanded())
@@ -514,3 +524,5 @@ class ObdMainWindow(QMainWindow):
         self.statusBar().setStyleSheet(
             f"QStatusBar {{ background-color: {c['bg_panel']};"
             f" color: {c['text_secondary']}; }}")
+        for page in self.pages.values():
+            page.apply_theme(c)
