@@ -125,6 +125,7 @@ class ModernTreeDelegate(QStyledItemDelegate):
                 painter.setPen(border)
                 painter.setBrush(Qt.NoBrush)
                 painter.drawRoundedRect(box.adjusted(0.7, 0.7, -0.7, -0.7), 3, 3)
+
         # Text
         font = QFont()
         font.setFamilies(["Segoe UI Variable Text", "Segoe UI", "Arial"])
@@ -133,9 +134,17 @@ class ModernTreeDelegate(QStyledItemDelegate):
             QFont.DemiBold if (has_children or is_top_level) else QFont.Normal
         )
         painter.setFont(font)
-        painter.setPen(
-            QColor(c["accent_blue"] if selected else c["text_primary"])
-        )
+
+        # Blocked modes ($05, $08) → dark gray + prohibition sign
+        is_blocked = index.data(Qt.UserRole + 1)
+        if is_blocked:
+            painter.setPen(QColor("#6B7280"))          # dark gray
+            text = "🚫  " + str(index.data())
+        else:
+            painter.setPen(
+                QColor(c["accent_blue"] if selected else c["text_primary"])
+            )
+            text = str(index.data())
 
         text_rect = QRectF(
             x + text_offset,
@@ -146,7 +155,5 @@ class ModernTreeDelegate(QStyledItemDelegate):
         painter.drawText(
             text_rect,
             Qt.AlignVCenter | Qt.AlignLeft,
-            str(index.data())
+            text
         )
-
-        painter.restore()
