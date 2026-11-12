@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
 
 from models.pid_directory import get_entries, get_mode_info
 from resources.theme import LIGHT
+from resources.icons import checked_indicator_pixmap
 
 _ID_ROLE = Qt.UserRole          # raw ID ("0C") stored on the first cell of a row
 
@@ -18,6 +19,20 @@ class PidPage(QWidget):
     """
 
     pids_changed = Signal(str, list)        # mode code, e.g. ("01", ["0C", "0D"])
+
+    _check_icon_path = None
+
+    @classmethod
+    def _get_check_icon_path(cls, accent_color):
+        if cls._check_icon_path is None:
+            import tempfile, os
+            pm = checked_indicator_pixmap(16, accent_color)
+            fd, path = tempfile.mkstemp(suffix=".png")
+            os.close(fd)
+            pm.save(path)
+            cls._check_icon_path = path
+        return cls._check_icon_path
+
 
     def __init__(self, mode, parent=None):
         super().__init__(parent)
@@ -202,12 +217,17 @@ class PidPage(QWidget):
                 border-radius: 10px; outline: 0; font-size: 10pt; }}
             QTableWidget::item {{ padding: 4px 8px; }}
             QTableWidget::item:hover {{ background-color: {c['border']}; }}
-            QTableWidget::indicator {{ width: 16px; height: 16px;
+            QTableWidget::indicator {{
+                width: 16px; height: 16px;
                 border: 1.5px solid {c['text_secondary']};
-                border-radius: 3px; background: transparent; }}
+                border-radius: 3px;
+                background: transparent;
+            }}
             QTableWidget::indicator:checked {{
-                background-color: {c['accent_blue']};
-                border: 1.5px solid {c['accent_blue']}; }}
+                border: none;
+                background: transparent;
+                image: url({self._get_check_icon_path(c['accent_blue'])});
+            }}
             QHeaderView::section {{ background-color: {c['bg_panel']};
                 color: {c['text_secondary']}; border: none;
                 border-bottom: 1px solid {c['border']};
