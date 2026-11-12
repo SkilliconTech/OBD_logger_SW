@@ -20,7 +20,7 @@ from views.mode_page import ModePage
 from views.mode_tree import ModeTree
 
 
-APP_TITLE = "OBD Tool"
+APP_TITLE = "OBD Configuration"
 COMPANY_URL = "https://skillicon.in/"
 
 
