@@ -324,28 +324,24 @@ class ObdMainWindow(QMainWindow):
             f"Mode {mode}: " + (", ".join(pids) or "no PIDs selected"), 3000)
         
     def on_tree_item_clicked(self, item, column):
-        if item.childCount() > 0:                    # parent row: expand/collapse
+        if item.childCount() > 0:
             item.setExpanded(not item.isExpanded())
             return
 
-        # Block Mode $05 and Mode $08
+        # Mode $05 and $08 → do absolutely nothing
         code = item.data(0, Qt.UserRole)
         if code in ("05", "08"):
-            QMessageBox.warning(
-                self,
-                "Not Available",
-                "🚫  Mode $05 and Mode $08 are not available in this version.\n\n"
-                "These modes are currently disabled."
-            )
             return
 
         name = item.text(0)
-        if name == "Generate Report":                # action item, opens no page
+        if name == "Generate Report":
             self.on_generate()
             return
+
         page = self.pages.get(name)
         if page is None:
             return
+
         self._current_page = name
         self.title_label.setText(name)
         self.content_stack.setVisible(True)
