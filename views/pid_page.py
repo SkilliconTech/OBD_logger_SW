@@ -26,9 +26,12 @@ class CheckBoxDelegate(QStyledItemDelegate):
             checked = (opt.checkState == Qt.Checked)
             opt.features &= ~QStyleOptionViewItem.HasCheckIndicator
 
-        super().paint(painter, opt, index)
-
         if is_checkable and index.column() == 0:
+            # Move the text to the right so it does not collide with the checkbox
+            opt.rect = option.rect.adjusted(26, 0, 0, 0)
+            super().paint(painter, opt, index)
+
+            # Draw our checkbox on the left
             rect = QRect(
                 option.rect.left() + 6,
                 option.rect.center().y() - self.SIZE // 2,
@@ -46,7 +49,8 @@ class CheckBoxDelegate(QStyledItemDelegate):
                 painter.setBrush(Qt.NoBrush)
                 painter.drawRoundedRect(rect.adjusted(0, 0, -1, -1), 3, 3)
                 painter.restore()
-
+        else:
+            super().paint(painter, opt, index)
 
 class PidPage(QWidget):
     pids_changed = Signal(str, list)
