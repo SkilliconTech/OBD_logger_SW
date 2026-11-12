@@ -327,6 +327,18 @@ class ObdMainWindow(QMainWindow):
         if item.childCount() > 0:                    # parent row: expand/collapse
             item.setExpanded(not item.isExpanded())
             return
+
+        # Block Mode $05 and Mode $08
+        code = item.data(0, Qt.UserRole)
+        if code in ("05", "08"):
+            QMessageBox.warning(
+                self,
+                "Not Available",
+                "🚫  Mode $05 and Mode $08 are not available in this version.\n\n"
+                "These modes are currently disabled."
+            )
+            return
+
         name = item.text(0)
         if name == "Generate Report":                # action item, opens no page
             self.on_generate()
