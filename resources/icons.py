@@ -104,3 +104,34 @@ def logo_icon() -> QIcon:
     pm = QPixmap()
     pm.loadFromData(base64.b64decode(_LOGO_B64))
     return QIcon(pm)
+
+def checked_indicator_pixmap(size=16, color="#3B82F6"):
+    """Blue rounded square with white checkmark (like the reference image)."""
+    from PySide6.QtGui import QPixmap, QPainter, QColor, QPen
+    from PySide6.QtCore import Qt, QPointF
+
+    pm = QPixmap(size, size)
+    pm.fill(Qt.transparent)
+
+    p = QPainter(pm)
+    p.setRenderHint(QPainter.Antialiasing)
+
+    # Blue rounded rectangle
+    p.setPen(Qt.NoPen)
+    p.setBrush(QColor(color))
+    p.drawRoundedRect(0, 0, size - 1, size - 1, 3, 3)
+
+    # White checkmark
+    tick = QPen(QColor("#FFFFFF"))
+    tick.setWidthF(1.8)
+    tick.setCapStyle(Qt.RoundCap)
+    tick.setJoinStyle(Qt.RoundJoin)
+    p.setPen(tick)
+    p.setBrush(Qt.NoBrush)
+    p.drawPolyline([
+        QPointF(3.5, size / 2),
+        QPointF(6.5, size / 2 + 3),
+        QPointF(size - 3.0, 4.5),
+    ])
+    p.end()
+    return pm
