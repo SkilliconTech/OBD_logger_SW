@@ -307,7 +307,7 @@ class ObdMainWindow(QMainWindow):
         """Modes list: one checkbox row and one page per mode."""
         self.new_tree.add_modes(MODES)
         for code in MODES:
-            self.add_page(code, ModePage(code))
+            self.add_page(f"Mode {code}", ModePage(code))
 
     def on_modes_changed(self, modes):
         self.selected_modes = modes                  # e.g. ["01", "05"]
