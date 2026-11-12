@@ -1,17 +1,17 @@
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import QTreeWidget, QTreeWidgetItem
 
 from views.tree_delegate import ModernTreeDelegate
 from models.pid_directory import get_mode_info
 
 
-# Modes that must be gray + non-accessible
 BLOCKED_MODES = {"05", "08"}
 
 
 class ModeTree(QTreeWidget):
-    """List of modes. Only selectable modes get a checkbox.
-    Mode $05 and $08 are blocked (gray + non-accessible).
+    """List of modes.
+    Mode $05 and $08 are gray + show prohibition cursor + ignore clicks.
     """
 
     modes_changed = Signal(list)
@@ -19,17 +19,18 @@ class ModeTree(QTreeWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._swallow_release = False
+        self.setMouseTracking(True)          # needed for hover cursor
 
     def add_modes(self, modes):
         self.clear()
         for code in modes:
             info = get_mode_info(code)
             item = QTreeWidgetItem([f"Mode ${code}"])
-            item.setData(0, Qt.UserRole, code)                 # real code
+            item.setData(0, Qt.UserRole, code)
             item.setData(0, Qt.UserRole + 1, code in BLOCKED_MODES)  # blocked flag
 
             if code in BLOCKED_MODES:
-                # No checkbox + disabled look
+                # Gray + no checkbox + not enabled
                 item.setFlags(item.flags() & ~Qt.ItemIsUserCheckable & ~Qt.ItemIsEnabled)
                 item.setData(0, Qt.CheckStateRole, None)
             elif info.selectable:
@@ -46,15 +47,28 @@ class ModeTree(QTreeWidget):
                 for i in range(self.topLevelItemCount())
                 if self.topLevelItem(i).checkState(0) == Qt.Checked]
 
+    def mouseMoveEvent(self, event):
+        """Show prohibition cursor when hovering over $05 / $08."""
+        item = self.itemAt(event.position().toPoint())
+        if item is not None and item.data(0, Qt.UserRole + 1):
+            self.viewport().setCursor(QCursor(Qt.ForbiddenCursor))
+        else:
+            self.viewport().setCursor(QCursor(Qt.ArrowCursor))
+        super().mouseMoveEvent(event)
+
+    def leaveEvent(self, event):
+        self.viewport().setCursor(QCursor(Qt.ArrowCursor))
+        super().leaveEvent(event)
+
     def mousePressEvent(self, event):
         pos = event.position().toPoint()
         item = self.itemAt(pos)
-        if item is not None and event.button() == Qt.LeftButton:
-            # Blocked modes → do nothing here (main window will show prohibition)
-            if item.data(0, Qt.UserRole + 1):
-                super().mousePressEvent(event)
-                return
 
+        # Blocked modes → completely ignore the click
+        if item is not None and item.data(0, Qt.UserRole + 1):
+            return
+
+        if item is not None and event.button() == Qt.LeftButton:
             if item.flags() & Qt.ItemIsUserCheckable:
                 box = ModernTreeDelegate.check_rect(self.visualItemRect(item))
                 if box.adjusted(-6, -8, 6, 8).contains(pos):
@@ -69,6 +83,9 @@ class ModeTree(QTreeWidget):
         super().mousePressEvent(event)
 
     def mouseDoubleClickEvent(self, event):
+        item = self.itemAt(event.position().toPoint())
+        if item is not None and item.data(0, Qt.UserRole + 1):
+            return          # also ignore double-click
         self.mousePressEvent(event)
 
     def mouseReleaseEvent(self, event):
