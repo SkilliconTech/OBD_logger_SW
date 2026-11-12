@@ -16,7 +16,7 @@ class ModeTree(QTreeWidget):
     def add_modes(self, modes):
         self.clear()
         for code in modes:
-            item = QTreeWidgetItem([f"Mode ${code}"])     # shown text: "Mode 01"
+            item = QTreeWidgetItem([f"Mode ${code}"])     # shown text: "Mode $01"
             item.setData(0, Qt.UserRole, code)           # real code: "01"
             item.setCheckState(0, Qt.Unchecked)
             self.addTopLevelItem(item)

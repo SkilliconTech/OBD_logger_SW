@@ -312,7 +312,7 @@ class ObdMainWindow(QMainWindow):
             page = PidPage(code)
             page.pids_changed.connect(self.on_pids_changed)
             page.apply_theme(c)
-            self.add_page(f"Mode {code}", page)
+            self.add_page(f"Mode ${code}", page)
     def on_modes_changed(self, modes):
         self.selected_modes = modes                  # e.g. ["01", "05"]
         self.statusBar().showMessage(
