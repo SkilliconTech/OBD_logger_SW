@@ -360,11 +360,15 @@ class ObdMainWindow(QMainWindow):
             self.on_generate()
             return
 
-        page = self.pages.get(name)
+        page_name = name
+        if item.checkState(0) == Qt.Checked:          # ticked mode -> its PID table
+            page_name = f"{name} PIDs"
+
+        page = self.pages.get(page_name)
         if page is None:
             return
 
-        self._current_page = name
+        self._current_page = page_name
         self.title_label.setText(name)
         self.content_stack.setVisible(True)
         self.content_stack.setCurrentWidget(page)
