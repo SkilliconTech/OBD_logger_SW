@@ -10,12 +10,12 @@ _NOTE_01_02 = (
 MODE_INFO = {
     "01": ModeInfo("01", "Live powertrain data",
                    "Reads current emissions-related measurements and status.",
-                   "PID", True, _NOTE_01_02),
+                   "PID", True),
     "02": ModeInfo("02", "Powertrain freeze frame",
                    "Reads stored data for the requested frame. PID $02 returns the "
                    "trigger DTC. Uses the applicable Mode $01 definitions and adds "
                    "a frame number.",
-                   "PID", True, _NOTE_01_02),
+                   "PID", True),
     "03": ModeInfo("03", "Confirmed DTCs",
                    "Reads confirmed emissions-related fault codes.", "", False),
     "04": ModeInfo("04", "Clear diagnostic information",
@@ -37,9 +37,7 @@ MODE_INFO = {
     "09": ModeInfo("09", "Vehicle information",
                    "Reads vehicle identification, calibration, and performance data "
                    "by InfoType.",
-                   "InfoType", True,
-                   "InfoTypes $10 and $11 are defined in Appendix G (Tables G16-G17). "
-                   "Confirm applicability and ECU support for those two."),
+                   "InfoType", True),
     "0A": ModeInfo("0A", "Permanent DTCs",
                    "Reads permanent emissions-related fault codes.", "", False),
 }

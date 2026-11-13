@@ -3,7 +3,7 @@ from PySide6.QtGui import QPainter, QColor, QPen
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
     QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView,
-    QStyledItemDelegate, QStyleOptionViewItem
+    QStyledItemDelegate, QStyle
 )
 
 from models.pid_directory import get_entries, get_mode_info
@@ -15,42 +15,58 @@ _ID_ROLE = Qt.UserRole
 
 class CheckBoxDelegate(QStyledItemDelegate):
     SIZE = 16
+    LEFT_PAD = 28          # space reserved for the checkbox
+
+    def sizeHint(self, option, index):
+        size = super().sizeHint(option, index)
+        if index.column() == 0 and (index.flags() & Qt.ItemIsUserCheckable):
+            size.setWidth(max(size.width() + self.LEFT_PAD, 70))
+        return size
 
     def paint(self, painter, option, index):
-        opt = QStyleOptionViewItem(option)
-        self.initStyleOption(opt, index)
+        # For non-checkable cells just use the normal painting
+        if index.column() != 0 or not (index.flags() & Qt.ItemIsUserCheckable):
+            super().paint(painter, option, index)
+            return
 
-        is_checkable = bool(index.flags() & Qt.ItemIsUserCheckable)
-        checked = False
-        if is_checkable and (opt.features & QStyleOptionViewItem.HasCheckIndicator):
-            checked = (opt.checkState == Qt.Checked)
-            opt.features &= ~QStyleOptionViewItem.HasCheckIndicator
+        painter.save()
+        painter.setRenderHint(QPainter.Antialiasing)
 
-        if is_checkable and index.column() == 0:
-            # Move the text to the right so it does not collide with the checkbox
-            opt.rect = option.rect.adjusted(26, 0, 0, 0)
-            super().paint(painter, opt, index)
+        # ---- background (hover / selected) ----
+        if option.state & QStyle.State_Selected:
+            painter.fillRect(option.rect, QColor("#4181EF").lighter(180))
+        elif option.state & QStyle.State_MouseOver:
+            painter.fillRect(option.rect, QColor("#E7E9F1"))
 
-            # Draw our checkbox on the left
-            rect = QRect(
-                option.rect.left() + 6,
-                option.rect.center().y() - self.SIZE // 2,
-                self.SIZE,
-                self.SIZE
-            )
-            if checked:
-                draw_checked_box(painter, rect, "#4181EF")
-            else:
-                painter.save()
-                painter.setRenderHint(QPainter.Antialiasing)
-                border = QPen(QColor("#6B7280"))
-                border.setWidthF(1.5)
-                painter.setPen(border)
-                painter.setBrush(Qt.NoBrush)
-                painter.drawRoundedRect(rect.adjusted(0, 0, -1, -1), 3, 3)
-                painter.restore()
+        # ---- checkbox ----
+        state = index.data(Qt.CheckStateRole)
+        checked = state in (Qt.Checked, 2)
+        box = QRect(
+            option.rect.left() + 6,
+            option.rect.center().y() - self.SIZE // 2,
+            self.SIZE,
+            self.SIZE
+        )
+        if checked:
+            draw_checked_box(painter, box, "#4181EF")
         else:
-            super().paint(painter, opt, index)
+            border = QPen(QColor("#6B7280"))
+            border.setWidthF(1.5)
+            painter.setPen(border)
+            painter.setBrush(Qt.NoBrush)
+            painter.drawRoundedRect(box.adjusted(0, 0, -1, -1), 3, 3)
+
+        # ---- PID text (always to the right of the checkbox) ----
+        text = str(index.data(Qt.DisplayRole) or "")
+        text_rect = option.rect.adjusted(self.LEFT_PAD, 0, -4, 0)
+        painter.setPen(QColor("#1D2631"))
+        font = painter.font()
+        font.setPointSizeF(10)
+        painter.setFont(font)
+        painter.drawText(text_rect, Qt.AlignVCenter | Qt.AlignLeft, text)
+
+        painter.restore()
+
 
 class PidPage(QWidget):
     pids_changed = Signal(str, list)
@@ -132,9 +148,10 @@ class PidPage(QWidget):
 
         header = self.table.horizontalHeader()
         header.setHighlightSections(False)
-        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(0, QHeaderView.Fixed)
         header.setSectionResizeMode(1, QHeaderView.Interactive)
         header.setSectionResizeMode(2, QHeaderView.Stretch)
+        self.table.setColumnWidth(0, 80)
         self.table.setColumnWidth(1, 260)
 
         self.table.setItemDelegateForColumn(0, CheckBoxDelegate(self.table))
