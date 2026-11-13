@@ -15,6 +15,8 @@ class ModeTree(QTreeWidget):
     """
 
     modes_changed = Signal(list)
+    mode_toggled = Signal(str, bool)        # ("01", True) when its box is ticked
+
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -78,6 +80,10 @@ class ModeTree(QTreeWidget):
                         item.setCheckState(0, Qt.Checked)
                     self.viewport().update()
                     self.modes_changed.emit(self.checked_modes())
+                    self.setCurrentItem(item)
+                    self.mode_toggled.emit(item.data(0, Qt.UserRole),
+                                           item.checkState(0) == Qt.Checked)
+                    self._swallow_release = True
                     self._swallow_release = True
                     return
         super().mousePressEvent(event)

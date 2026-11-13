@@ -1,3 +1,4 @@
+import code
 import os
 
 from PySide6.QtCore import Qt, QSize, QRect, QEvent, QTimer, QUrl
@@ -16,6 +17,8 @@ from resources.icons import make_theme_icon, trash_pixmap, logo_icon
 from views.tree_delegate import ModernTreeDelegate
 from views.slide_switch import SlideSwitch
 from models.modes import MODES
+from models.pid_directory import get_mode_info
+from views.mode_info_page import ModeInfoPage
 from views.pid_page import PidPage
 from views.mode_tree import ModeTree
 
@@ -211,6 +214,7 @@ class ObdMainWindow(QMainWindow):
         self.new_tree.setItemDelegate(self.tree_delegate)
         self.new_tree.itemClicked.connect(self.on_tree_item_clicked)
         self.new_tree.modes_changed.connect(self.on_modes_changed)
+        self.new_tree.mode_toggled.connect(self.on_mode_toggled)
         cl.addWidget(self.new_tree, 1)
         lay.addWidget(self.config_section, 1)
         return self.sidebar
@@ -305,19 +309,37 @@ class ObdMainWindow(QMainWindow):
         self.content_stack.addWidget(widget)
 
     def _build_tree(self):
-        """Modes list: one checkbox row and one page per mode."""
+        """Modes list. Modes with a checkbox get an info page and a PID page."""
         self.new_tree.add_modes(MODES)
         c = DARK if self.dark_mode else LIGHT
         for code in MODES:
-            page = PidPage(code)
-            page.pids_changed.connect(self.on_pids_changed)
+            if get_mode_info(code).selectable:
+                # click on the name -> information, tick the box -> PID table
+                self.add_page(f"Mode ${code}", ModeInfoPage(code))
+                pid_page = PidPage(code)
+                pid_page.pids_changed.connect(self.on_pids_changed)
+                self.add_page(f"Mode ${code} PIDs", pid_page)
+            else:
+                # no checkbox: the page itself is the only page
+                self.add_page(f"Mode ${code}", PidPage(code))
+        for page in self.pages.values():
             page.apply_theme(c)
-            self.add_page(f"Mode ${code}", page)
+
     def on_modes_changed(self, modes):
         self.selected_modes = modes                  # e.g. ["01", "05"]
         self.statusBar().showMessage(
             "Selected modes: " + (", ".join(modes) or "none"), 3000)
 
+    def on_mode_toggled(self, code, checked):
+        """Box ticked -> PID table. Box unticked -> back to the mode information."""
+        page_name = f"Mode ${code} PIDs" if checked else f"Mode ${code}"
+        page = self.pages.get(page_name)
+        if page is None:
+            return
+        self._current_page = page_name
+        self.title_label.setText(f"Mode ${code}")
+        self.content_stack.setVisible(True)
+        self.content_stack.setCurrentWidget(page)
     def on_pids_changed(self, mode, pids):
         self.selected_pids[mode] = pids
         self.statusBar().showMessage(
