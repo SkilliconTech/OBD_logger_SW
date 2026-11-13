@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt, Signal, QTimer, QRect
+from PySide6.QtCore import Qt, Signal, QTimer, QRect, QEvent
 from PySide6.QtGui import QPainter, QColor, QPen
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
@@ -22,6 +22,25 @@ class CheckBoxDelegate(QStyledItemDelegate):
         if index.column() == 0 and (index.flags() & Qt.ItemIsUserCheckable):
             size.setWidth(max(size.width() + self.LEFT_PAD, 70))
         return size
+
+    def _box_rect(self, cell_rect):
+        return QRect(cell_rect.left() + 6,
+                     cell_rect.center().y() - self.SIZE // 2,
+                     self.SIZE, self.SIZE)
+
+    def editorEvent(self, event, model, option, index):
+        """Tick or untick only when the checkbox itself is clicked."""
+        if index.column() == 0 and (index.flags() & Qt.ItemIsUserCheckable):
+            if (event.type() == QEvent.MouseButtonRelease
+                    and event.button() == Qt.LeftButton):
+                hit = self._box_rect(option.rect).adjusted(-4, -6, 4, 6)
+                if hit.contains(event.position().toPoint()):
+                    state = index.data(Qt.CheckStateRole)
+                    is_checked = state in (Qt.Checked, 2)
+                    model.setData(index, 0 if is_checked else 2, Qt.CheckStateRole)
+                    return True
+            return False          # any other click does nothing
+        return super().editorEvent(event, model, option, index)
 
     def paint(self, painter, option, index):
         # For non-checkable cells just use the normal painting
@@ -177,7 +196,6 @@ class PidPage(QWidget):
 
         if selectable:
             self.table.itemChanged.connect(self._on_item_changed)
-            self.table.cellClicked.connect(self._on_cell_clicked)
             self._update_count()
 
     def checked_pids(self):
@@ -196,12 +214,6 @@ class PidPage(QWidget):
         if item.column() == 0:
             self._update_count()
             self.pids_changed.emit(self.mode, self.checked_pids())
-
-    def _on_cell_clicked(self, row, column):
-        if column != 0:
-            id_item = self.table.item(row, 0)
-            id_item.setCheckState(
-                Qt.Unchecked if id_item.checkState() == Qt.Checked else Qt.Checked)
 
     def _set_checks(self, state, only_visible):
         self.table.blockSignals(True)
