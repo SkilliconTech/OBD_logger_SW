@@ -337,6 +337,7 @@ class ObdMainWindow(QMainWindow):
         self.selected_modes = modes                  # e.g. ["01", "05"]
         self.statusBar().showMessage(
             "Selected modes: " + (", ".join(modes) or "none"), 3000)
+        self._sync_config()
 
     def on_mode_toggled(self, code, checked):
         """Box ticked -> PID table. Box unticked -> back to the mode information."""
@@ -348,6 +349,21 @@ class ObdMainWindow(QMainWindow):
         self.title_label.setText(f"Mode ${code}")
         self.content_stack.setVisible(True)
         self.content_stack.setCurrentWidget(page)
+
+    def on_folder_changed(self, folder):
+        self.config_sync.folder = folder
+        self._sync_config()
+
+    def on_drive_changed(self, drive):
+        self.config_sync.drive = drive
+        self._sync_config()
+
+    def _sync_config(self):
+        """Build config.json from the ticks and save it to the chosen places."""
+        config = build_config(self.selected_modes, self.selected_pids)
+        result = self.config_sync.sync(config)
+        self.statusBar().showMessage(describe_result(result), 8000)
+
     def on_pids_changed(self, mode, pids):
         self.selected_pids[mode] = pids
         self.statusBar().showMessage(
@@ -568,3 +584,4 @@ class ObdMainWindow(QMainWindow):
             f" color: {c['text_secondary']}; }}")
         for page in self.pages.values():
             page.apply_theme(c)
+        self.target_selector.apply_theme(c)
