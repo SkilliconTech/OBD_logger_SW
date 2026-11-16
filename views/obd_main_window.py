@@ -252,6 +252,11 @@ class ObdMainWindow(QMainWindow):
 
         topbar.addWidget(title_group)
         topbar.addStretch(1)
+        self.target_selector = TargetSelector()
+        self.target_selector.folder_changed.connect(self.on_folder_changed)
+        self.target_selector.drive_changed.connect(self.on_drive_changed)
+        topbar.addWidget(self.target_selector)
+        topbar.addSpacing(10)
 
         self.help_button = QPushButton("?")
         self.help_button.setObjectName("helpButton")
