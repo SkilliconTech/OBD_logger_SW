@@ -70,6 +70,7 @@ class ObdMainWindow(QMainWindow):
         self.imported_files = []
         self.selected_modes = []
         self.selected_pids = {}
+        self.config_sync = ConfigSync()
         self.setWindowTitle(APP_TITLE)
         self.resize(1400, 950)
         self._create_actions()
