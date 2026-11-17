@@ -392,7 +392,7 @@ class ObdMainWindow(QMainWindow):
 
     def _sync_config(self):
         """Build config.json from the ticks and save it to the chosen places."""
-        config = build_config(self.selected_modes, self.selected_pids)
+        config = build_config(self.selected_modes, self.selected_pids, self.base_config)
         result = self.config_sync.sync(config)
         self.statusBar().showMessage(describe_result(result), 8000)
 
