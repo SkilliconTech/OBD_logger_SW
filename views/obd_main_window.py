@@ -348,6 +348,10 @@ class ObdMainWindow(QMainWindow):
                 self.add_page(f"Mode ${code}", PidPage(code))
         for page in self.pages.values():
             page.apply_theme(c)
+        self.settings_page = SettingsPage()
+        self.settings_page.settings_changed.connect(self.on_settings_changed)
+        self.settings_page.apply_theme(c)
+        self.add_page("Settings", self.settings_page)
 
     def on_modes_changed(self, modes):
         self.selected_modes = modes                  # e.g. ["01", "05"]
