@@ -237,6 +237,23 @@ class PidPage(QWidget):
         return [self.table.item(r, 0).data(_ID_ROLE)
                 for r in range(self.table.rowCount())
                 if self.table.item(r, 0).checkState() == Qt.Checked]
+    
+    def reset(self):
+        """Back to the start: nothing ticked, default intervals, no search text."""
+        if self.table is None:
+            return
+        self.search.clear()                      # shows every row again
+        if not self.info.selectable:
+            return
+        self.table.blockSignals(True)
+        for r in range(self.table.rowCount()):
+            self.table.item(r, 0).setCheckState(Qt.Unchecked)
+            interval_item = self.table.item(r, 3)
+            if interval_item is not None:
+                interval_item.setData(Qt.EditRole, DEFAULT_INTERVAL_MS)
+        self.table.blockSignals(False)
+        self.table.viewport().update()
+        self._update_count()
 
     def selection(self):
         """{"0C": 250, "0D": 1000}: the ticked IDs with their polling interval."""
