@@ -402,6 +402,7 @@ class ObdMainWindow(QMainWindow):
             f"Mode {mode}: " + (", ".join(pids) or "no PIDs selected"), 3000)
         
     def on_tree_item_clicked(self, item, column):
+        self.settings_tree.clearSelection()
         if item.childCount() > 0:
             item.setExpanded(not item.isExpanded())
             return
@@ -617,3 +618,7 @@ class ObdMainWindow(QMainWindow):
         for page in self.pages.values():
             page.apply_theme(c)
         self.target_selector.apply_theme(c)
+        self.settings_section.setStyleSheet(
+            f"#settingsSection {{ background-color: {c['bg_main']};"
+            f" border: 2px solid {c['border']}; border-radius: {RADIUS_LG}px; }}")
+        self.settings_tree.apply_theme(c)
