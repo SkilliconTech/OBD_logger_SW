@@ -32,6 +32,7 @@ from views.settings_tree import SettingsTree
 from services.config_builder import build_config
 from services.config_sync import ConfigSync, describe_result
 from views.target_selector import TargetSelector
+from views.problems_bar import ProblemsBar
 
 APP_TITLE = "OBD Configuration"
 COMPANY_URL = "https://skillicon.in/"
@@ -327,7 +328,9 @@ class ObdMainWindow(QMainWindow):
         shadow.setYOffset(2)
         shadow.setColor(QColor(16, 24, 40, 40))
         self.content_panel.setGraphicsEffect(shadow)
+        self.problems_bar = ProblemsBar()
         ml.addWidget(self.content_panel, 1)
+
         return self.main_area
 
     # ------------------------------------------------------------------
@@ -406,7 +409,7 @@ class ObdMainWindow(QMainWindow):
         config = build_config(self.selected_modes, self.selected_pids,
                               self.base_config, self.frame_02)
         result = self.config_sync.sync(config)
-        self.statusBar().showMessage(describe_result(result), 8000)
+        self.problems_bar.show_result(result)
 
     def on_pids_changed(self, mode, pids):
         self.selected_pids[mode] = pids
@@ -521,6 +524,7 @@ class ObdMainWindow(QMainWindow):
         self.clear_page_area()
         self.statusBar().showMessage(
             "New configuration. Everything is back to the defaults.", 4000)
+        self.problems_bar.show_idle("New configuration. Nothing selected yet.")
 
     def on_save(self):
         self.statusBar().showMessage("Save (add your code)", 3000)
@@ -571,6 +575,8 @@ class ObdMainWindow(QMainWindow):
                 self, "Some requests were not loaded",
                 "These requests cannot be shown in this tool, so they will not be in "
                 "config.json the next time it is saved:\n" + lines)
+            self.problems_bar.show_idle(
+                f"Imported {name}. Not saved yet: change something to save.")
         else:
             self._sync_config()
         self.statusBar().showMessage(
@@ -694,3 +700,4 @@ class ObdMainWindow(QMainWindow):
             f"#settingsSection {{ background-color: {c['bg_main']};"
             f" border: 2px solid {c['border']}; border-radius: {RADIUS_LG}px; }}")
         self.settings_tree.apply_theme(c)
+        self.problems_bar.apply_theme(c)

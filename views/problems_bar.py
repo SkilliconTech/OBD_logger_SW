@@ -1,5 +1,4 @@
 import os
-from datetime import datetime
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
@@ -62,14 +61,13 @@ class ProblemsBar(QFrame):
             failed = ", ".join(target for target, _ in result.failed)
             text = f"Could not save to {failed}"
             if result.saved:
-                where = ", ".join(os.path.dirname(p) for p in result.saved)
-                text = f"Saved to {where}. " + text
+                paths = ", ".join(os.path.normpath(p) for p in result.saved)
+                text = f"File is saved: {paths}. " + text
             details = "\n\n".join(f"{target}\n{error}" for target, error in result.failed)
             self._set("error", text, details)
         else:
-            where = ", ".join(os.path.dirname(p) for p in result.saved)
-            self._set("ok", f"config.json is up to date. Saved to {where} "
-                            f"at {datetime.now():%H:%M}.")
+            paths = ", ".join(os.path.normpath(p) for p in result.saved)
+            self._set("ok", f"File is saved: {paths}")
 
     def _set(self, state, text, details=""):
         self._state = state
