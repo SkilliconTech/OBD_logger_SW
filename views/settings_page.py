@@ -32,10 +32,7 @@ class SettingsPage(QWidget):
         heading = QLabel("Settings")
         heading.setObjectName("settingsHeading")
         lay.addWidget(heading)
-        hint = QLabel("These values go into config.json. Changes are saved automatically.")
-        hint.setObjectName("settingsHint")
-        lay.addWidget(hint)
-
+        
         self.bitrate = QComboBox()
         for rate in R.BITRATES:
             self.bitrate.addItem(f"{rate // 1000} kbit/s", rate)
