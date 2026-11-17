@@ -1,7 +1,7 @@
 import code
 import os
 from dataclasses import replace
-from services.config_file import import_config
+from services.config_file import import_config, save_config_file, InvalidConfigError
 from services.config_importer import selection_from_config
 from services.config_serializer import ConfigFormatError
 from services.config_validator import validate
@@ -80,6 +80,7 @@ class ObdMainWindow(QMainWindow):
         self.selected_modes = []
         self.selected_pids = {}
         self.config_sync = ConfigSync()
+        self.save_path = ""                     # file chosen with Save / Save As
         self.base_config = LoggerConfig()      # the settings (bitrate, IDs, timings)
         self.frame_02 = "00"                   # freeze frame number for Mode 02
         self.setWindowTitle(APP_TITLE)
@@ -276,7 +277,6 @@ class ObdMainWindow(QMainWindow):
         topbar.addWidget(title_group)
         topbar.addStretch(1)
         self.target_selector = TargetSelector()
-        self.target_selector.folder_changed.connect(self.on_folder_changed)
         self.target_selector.drive_changed.connect(self.on_drive_changed)
         topbar.addWidget(self.target_selector)
         topbar.addSpacing(10)
@@ -392,9 +392,6 @@ class ObdMainWindow(QMainWindow):
         self.base_config = settings
         self._sync_config()
 
-    def on_folder_changed(self, folder):
-        self.config_sync.folder = folder
-        self._sync_config()
 
     def on_frame_changed(self, frame):
         self.frame_02 = frame
@@ -404,12 +401,38 @@ class ObdMainWindow(QMainWindow):
         self.config_sync.drive = drive
         self._sync_config()
 
+    def _build_config(self):
+        return build_config(self.selected_modes, self.selected_pids,
+                            self.base_config, self.frame_02)
+
     def _sync_config(self):
-        """Build config.json from the ticks and save it to the chosen places."""
-        config = build_config(self.selected_modes, self.selected_pids,
-                              self.base_config, self.frame_02)
-        result = self.config_sync.sync(config)
-        self.problems_bar.show_result(result)
+        """After every change: check the configuration. If a logger drive is chosen,
+        keep its config.json up to date. The Save button handles the saved file."""
+        config = self._build_config()
+        issues = validate(config)
+        if issues:
+            self.problems_bar.show_issues(issues)
+            return
+        if self.config_sync.drive:                      # logger chosen: write to it
+            result = self.config_sync.sync(config)
+            if result.failed:
+                target, error = result.failed[0]
+                self.problems_bar.show_failure(target, error)
+                return
+            logger_file = result.saved[0]
+            if self.save_path:
+                self.problems_bar.show_idle(
+                    f"Saved to the logger: {os.path.normpath(logger_file)}. "
+                    f"Click Save to update {os.path.normpath(self.save_path)}.")
+            else:
+                self.problems_bar.show_saved(logger_file)
+            return
+        if self.save_path:
+            self.problems_bar.show_idle(
+                f"Unsaved changes. Click Save to update {os.path.normpath(self.save_path)}")
+        else:
+            self.problems_bar.show_idle(
+                "Ready. Click Save to choose where to save config.json.")
 
     def on_pids_changed(self, mode, pids):
         self.selected_pids[mode] = pids
@@ -514,6 +537,7 @@ class ObdMainWindow(QMainWindow):
         self.settings_page.set_settings(LoggerConfig())
         self.base_config = LoggerConfig()
         self.frame_02 = "00"
+        self.save_path = ""
         self.new_tree.uncheck_all()
         for page in self.pages.values():
             if hasattr(page, "reset"):
@@ -527,11 +551,35 @@ class ObdMainWindow(QMainWindow):
         self.problems_bar.show_idle("New configuration. Nothing selected yet.")
 
     def on_save(self):
-        self.statusBar().showMessage("Save (add your code)", 3000)
+        """First time: ask for a path. After that: silently overwrite the same file."""
+        if not self.save_path:
+            self.on_save_as()
+            return
+        self._write_config(self.save_path)
 
     def on_save_as(self):
-        self.statusBar().showMessage("Save As (add your code)", 3000)
+        """Always ask for a path."""
+        start = self.save_path or "config.json"
+        path, _ = QFileDialog.getSaveFileName(
+            self, "Save config.json", start, "JSON files (*.json);;All files (*)")
+        if path and self._write_config(path):
+            self.save_path = path
 
+    def _write_config(self, path):
+        """Writes the file. Returns True when it worked."""
+        try:
+            saved = save_config_file(self._build_config(), path)
+        except InvalidConfigError as error:
+            self.problems_bar.show_issues(error.issues)
+            lines = "\n".join(f"- {i.field}: {i.message} {i.fix}" for i in error.issues[:6])
+            QMessageBox.warning(self, "Cannot save yet", lines)
+            return False
+        except OSError as error:
+            self.problems_bar.show_failure(path, error)
+            QMessageBox.warning(self, "Could not save", f"{path}\n\n{error}")
+            return False
+        self.problems_bar.show_saved(str(saved))
+        return True
     def on_import(self):
         path, _ = QFileDialog.getOpenFileName(
             self, "Import config.json", "", "Config files (*.json);;All files (*)")

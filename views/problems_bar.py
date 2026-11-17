@@ -12,7 +12,8 @@ RED = "#D64545"
 
 
 class ProblemsBar(QFrame):
-    """Always-visible strip: says whether config.json was saved, and why not."""
+    """Always-visible strip: says whether the configuration can be saved, and
+    whether the file has been saved."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -47,27 +48,18 @@ class ProblemsBar(QFrame):
     def show_idle(self, text):
         self._set("idle", text)
 
-    def show_result(self, result):
-        """`result` is a SyncResult from services.config_sync."""
-        if result.issues:
-            first = result.issues[0]
-            more = f" (+{len(result.issues) - 1} more)" if len(result.issues) > 1 else ""
-            details = "\n\n".join(f"{i.field}\n{i.message} {i.fix}" for i in result.issues)
-            self._set("error", f"Not saved: {first.field}: {first.message}{more}", details)
-        elif result.no_target:
-            self._set("idle", "The configuration is valid. Choose a save folder "
-                              "or the logger drive to save it.")
-        elif result.failed:
-            failed = ", ".join(target for target, _ in result.failed)
-            text = f"Could not save to {failed}"
-            if result.saved:
-                paths = ", ".join(os.path.normpath(p) for p in result.saved)
-                text = f"File is saved: {paths}. " + text
-            details = "\n\n".join(f"{target}\n{error}" for target, error in result.failed)
-            self._set("error", text, details)
-        else:
-            paths = ", ".join(os.path.normpath(p) for p in result.saved)
-            self._set("ok", f"File is saved: {paths}")
+    def show_issues(self, issues):
+        """The configuration cannot be saved yet. `issues` are ConfigIssue items."""
+        first = issues[0]
+        more = f" (+{len(issues) - 1} more)" if len(issues) > 1 else ""
+        details = "\n\n".join(f"{i.field}\n{i.message} {i.fix}" for i in issues)
+        self._set("error", f"Cannot save yet: {first.field}: {first.message}{more}", details)
+
+    def show_saved(self, path):
+        self._set("ok", f"File is saved: {os.path.normpath(path)}")
+
+    def show_failure(self, path, error):
+        self._set("error", f"Could not save to {os.path.normpath(path)}", str(error))
 
     def _set(self, state, text, details=""):
         self._state = state
