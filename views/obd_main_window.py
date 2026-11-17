@@ -492,7 +492,19 @@ class ObdMainWindow(QMainWindow):
     # Button handlers: put your own logic here
     # ------------------------------------------------------------------
     def on_new(self):
-        self.statusBar().showMessage("New (add your code)", 3000)
+        """Start again: settings, modes, PIDs and intervals go back to the defaults."""
+        self.settings_page.set_settings(LoggerConfig())
+        self.base_config = LoggerConfig()
+        self.new_tree.uncheck_all()
+        for page in self.pages.values():
+            if hasattr(page, "reset"):
+                page.reset()
+        self.selected_modes = []
+        self.selected_pids = {}
+        self.settings_tree.clearSelection()
+        self.clear_page_area()
+        self.statusBar().showMessage(
+            "New configuration. Everything is back to the defaults.", 4000)
 
     def on_save(self):
         self.statusBar().showMessage("Save (add your code)", 3000)
