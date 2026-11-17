@@ -70,7 +70,7 @@ class SettingsPage(QWidget):
         self.problems.setObjectName("settingsProblems")
         self.problems.setWordWrap(True)
         lay.addWidget(self.problems)
-        
+
         lay.addStretch(1)
 
         self.bitrate.currentIndexChanged.connect(self._on_changed)
@@ -149,10 +149,6 @@ class SettingsPage(QWidget):
         if self.tx_id.text().upper() == other and self.rx_id.text() in ("", "0"):
             self.tx_id.setText(R.FUNCTIONAL_IDS[bits])    # keep the usual broadcast ID
             self.rx_id.setText("0")
-        self._on_changed()
-
-    def _reset(self):
-        self.set_settings(LoggerConfig())
         self._on_changed()
 
     # ------------------------------------------------------------------ theme
