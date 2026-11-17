@@ -75,6 +75,7 @@ class ObdMainWindow(QMainWindow):
         self.selected_pids = {}
         self.config_sync = ConfigSync()
         self.base_config = LoggerConfig()      # the settings (bitrate, IDs, timings)
+        self.frame_02 = "00"                   # freeze frame number for Mode 02
         self.setWindowTitle(APP_TITLE)
         self.resize(1400, 950)
         self._create_actions()
@@ -342,6 +343,7 @@ class ObdMainWindow(QMainWindow):
                 self.add_page(f"Mode ${code}", ModeInfoPage(code))
                 pid_page = PidPage(code)
                 pid_page.pids_changed.connect(self.on_pids_changed)
+                pid_page.frame_changed.connect(self.on_frame_changed)
                 self.add_page(f"Mode ${code} PIDs", pid_page)
             else:
                 # no checkbox: the page itself is the only page
@@ -386,13 +388,18 @@ class ObdMainWindow(QMainWindow):
         self.config_sync.folder = folder
         self._sync_config()
 
+    def on_frame_changed(self, frame):
+        self.frame_02 = frame
+        self._sync_config()
+
     def on_drive_changed(self, drive):
         self.config_sync.drive = drive
         self._sync_config()
 
     def _sync_config(self):
         """Build config.json from the ticks and save it to the chosen places."""
-        config = build_config(self.selected_modes, self.selected_pids, self.base_config)
+        config = build_config(self.selected_modes, self.selected_pids,
+                              self.base_config, self.frame_02)
         result = self.config_sync.sync(config)
         self.statusBar().showMessage(describe_result(result), 8000)
 
@@ -495,6 +502,7 @@ class ObdMainWindow(QMainWindow):
         """Start again: settings, modes, PIDs and intervals go back to the defaults."""
         self.settings_page.set_settings(LoggerConfig())
         self.base_config = LoggerConfig()
+        self.frame_02 = "00"
         self.new_tree.uncheck_all()
         for page in self.pages.values():
             if hasattr(page, "reset"):
