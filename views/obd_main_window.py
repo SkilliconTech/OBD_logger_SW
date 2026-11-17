@@ -21,6 +21,9 @@ from models.pid_directory import get_mode_info
 from views.mode_info_page import ModeInfoPage
 from views.pid_page import PidPage
 from views.mode_tree import ModeTree
+from models.logger_config import LoggerConfig
+from views.settings_page import SettingsPage
+from views.settings_tree import SettingsTree
 from services.config_builder import build_config
 from services.config_sync import ConfigSync, describe_result
 from views.target_selector import TargetSelector
@@ -71,6 +74,7 @@ class ObdMainWindow(QMainWindow):
         self.selected_modes = []
         self.selected_pids = {}
         self.config_sync = ConfigSync()
+        self.base_config = LoggerConfig()      # the settings (bitrate, IDs, timings)
         self.setWindowTitle(APP_TITLE)
         self.resize(1400, 950)
         self._create_actions()
@@ -189,6 +193,18 @@ class ObdMainWindow(QMainWindow):
         btn_row.addLayout(save_group)
         il.addLayout(btn_row)
         lay.addWidget(self.imported_section, 0)
+        lay.addSpacing(12)
+
+        # ---- Settings entry (above the modes) ----
+        self.settings_section = QFrame()
+        self.settings_section.setObjectName("settingsSection")
+        self.settings_section.setAttribute(Qt.WA_StyledBackground, True)
+        sl = QVBoxLayout(self.settings_section)
+        sl.setContentsMargins(10, 6, 10, 6)
+        self.settings_tree = SettingsTree()
+        self.settings_tree.opened.connect(self.on_settings)
+        sl.addWidget(self.settings_tree)
+        lay.addWidget(self.settings_section, 0)
         lay.addSpacing(12)
 
         # ---- Section 2: configuration tree ----
