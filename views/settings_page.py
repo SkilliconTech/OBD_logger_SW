@@ -70,12 +70,7 @@ class SettingsPage(QWidget):
         self.problems.setObjectName("settingsProblems")
         self.problems.setWordWrap(True)
         lay.addWidget(self.problems)
-
-        reset = QPushButton("Reset to defaults")
-        reset.setObjectName("resetButton")
-        reset.setFixedWidth(160)
-        reset.clicked.connect(self._reset)
-        lay.addWidget(reset)
+        
         lay.addStretch(1)
 
         self.bitrate.currentIndexChanged.connect(self._on_changed)
