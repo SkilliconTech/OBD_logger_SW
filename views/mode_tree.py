@@ -48,6 +48,14 @@ class ModeTree(QTreeWidget):
         return [self.topLevelItem(i).data(0, Qt.UserRole)
                 for i in range(self.topLevelItemCount())
                 if self.topLevelItem(i).checkState(0) == Qt.Checked]
+    
+    def uncheck_all(self):
+        """Untick every mode (used by New)."""
+        for i in range(self.topLevelItemCount()):
+            item = self.topLevelItem(i)
+            if item.flags() & Qt.ItemIsUserCheckable:
+                item.setCheckState(0, Qt.Unchecked)
+        self.viewport().update()
 
     def mouseMoveEvent(self, event):
         """Show prohibition cursor when hovering over $05 / $08."""
