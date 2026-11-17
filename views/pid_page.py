@@ -292,6 +292,28 @@ class PidPage(QWidget):
     def _normalise_frame(self):
         self.frame_edit.setText(self.frame())
 
+    def set_selection(self, chosen, frame="00"):
+        """Tick exactly {id: interval} and untick the rest (used by Import)."""
+        if self.table is None or not self.info.selectable:
+            return
+        self.table.blockSignals(True)
+        for r in range(self.table.rowCount()):
+            id_item = self.table.item(r, 0)
+            ident = id_item.data(_ID_ROLE)
+            if ident in chosen:
+                id_item.setCheckState(Qt.Checked)
+                self.table.item(r, 3).setData(Qt.EditRole, int(chosen[ident]))
+            else:
+                id_item.setCheckState(Qt.Unchecked)
+                self.table.item(r, 3).setData(Qt.EditRole, DEFAULT_INTERVAL_MS)
+        self.table.blockSignals(False)
+        if self.frame_edit is not None:
+            self.frame_edit.blockSignals(True)
+            self.frame_edit.setText(frame)
+            self.frame_edit.blockSignals(False)
+        self.table.viewport().update()
+        self._update_count()
+
     def selection(self):
         """{"0C": 250, "0D": 1000}: the ticked IDs with their polling interval."""
         if self.table is None or not self.info.selectable:

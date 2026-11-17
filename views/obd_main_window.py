@@ -1,5 +1,10 @@
 import code
 import os
+from dataclasses import replace
+from services.config_file import import_config
+from services.config_importer import selection_from_config
+from services.config_serializer import ConfigFormatError
+from services.config_validator import validate
 
 from PySide6.QtCore import Qt, QSize, QRect, QEvent, QTimer, QUrl
 from PySide6.QtGui import (
@@ -456,7 +461,10 @@ class ObdMainWindow(QMainWindow):
         self.imported_files.append(path)
 
     def on_file_clicked(self, item):
-        # load your file here, then:
+        path = item.data(Qt.UserRole)
+        if path:                                  # a real file: load it again
+            self._load_config_file(path)
+            return
         self.clear_page_area()
         self.statusBar().showMessage(f"Opened {item.text()}", 3000)
 
@@ -521,10 +529,54 @@ class ObdMainWindow(QMainWindow):
         self.statusBar().showMessage("Save As (add your code)", 3000)
 
     def on_import(self):
-        path, _ = QFileDialog.getOpenFileName(self, "Import", "", "All files (*)")
-        if path:
-            self._add_file_row(path)
+        path, _ = QFileDialog.getOpenFileName(
+            self, "Import config.json", "", "Config files (*.json);;All files (*)")
+        if path and self._load_config_file(path):
+            if path not in self.imported_files:
+                self._add_file_row(path)
 
+    def _load_config_file(self, path):
+        """Read a config.json and fill in the screens. Returns True when it worked."""
+        name = os.path.basename(path)
+        try:
+            config = import_config(path)
+        except (OSError, ConfigFormatError) as error:
+            QMessageBox.warning(self, "Cannot import", f"{name}\n\n{error}")
+            return False
+        issues = validate(config)
+        if issues:
+            lines = "\n".join(f"- {i.field}: {i.message} {i.fix}" for i in issues[:6])
+            more = f"\n(and {len(issues) - 6} more)" if len(issues) > 6 else ""
+            QMessageBox.warning(self, "Cannot import",
+                                f"{name} has problems:\n{lines}{more}")
+            return False
+
+        selection = selection_from_config(config)
+        self.on_new()                                  # start from a clean screen
+        self.settings_page.set_settings(config)
+        self.base_config = replace(config, requests=[])
+        self.new_tree.set_checked_modes(selection.modes)
+        for mode, chosen in selection.pids.items():
+            page = self.pages.get(f"Mode ${mode} PIDs")
+            if page is not None:
+                page.set_selection(chosen, selection.frame)
+        self.selected_modes = list(selection.modes)
+        self.selected_pids = {m: dict(c) for m, c in selection.pids.items()}
+        self.frame_02 = selection.frame
+
+        loaded = len(config.requests) - len(selection.skipped)
+        if selection.skipped:
+            lines = "\n".join(f"- {text}: {why}" for text, why in selection.skipped)
+            QMessageBox.information(
+                self, "Some requests were not loaded",
+                "These requests cannot be shown in this tool, so they will not be in "
+                "config.json the next time it is saved:\n" + lines)
+        else:
+            self._sync_config()
+        self.statusBar().showMessage(
+            f"Imported {name}: {loaded} request(s) loaded.", 6000)
+        return True
+    
     def on_generate(self):
         self.statusBar().showMessage("Generate (add your code)", 3000)
 
