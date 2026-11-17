@@ -18,10 +18,12 @@ def build_config(selected_modes, selected_pids, base=None):
     for mode in _ID_MODES:
         if mode not in selected_modes:
             continue
-        for ident in selected_pids.get(mode, []):
+        chosen = selected_pids.get(mode, {})
+        if not isinstance(chosen, dict):              # a plain list of IDs
+            chosen = {ident: DEFAULT_INTERVAL_MS for ident in chosen}
+        for ident, interval in chosen.items():
             frame = DEFAULT_FRAME if mode == "02" else None
-            requests.append(Request(build_request(mode, ident, frame),
-                                    DEFAULT_INTERVAL_MS))
+            requests.append(Request(build_request(mode, ident, frame), interval))
     for mode in _SINGLE_MODES:
         if mode in selected_modes:
             requests.append(Request(build_request(mode), DEFAULT_INTERVAL_MS))

@@ -3,10 +3,13 @@ from PySide6.QtGui import QPainter, QColor, QPen
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
     QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView,
-    QStyledItemDelegate, QStyle
+    QStyledItemDelegate, QStyle ,QStyledItemDelegate, QStyle, QSpinBox
 )
 
+
+from models.config_rules import INTERVAL_MS
 from models.pid_directory import get_entries, get_mode_info
+from services.config_builder import DEFAULT_INTERVAL_MS
 from resources.theme import LIGHT
 from resources.icons import draw_checked_box
 
@@ -86,10 +89,24 @@ class CheckBoxDelegate(QStyledItemDelegate):
 
         painter.restore()
 
+class IntervalDelegate(QStyledItemDelegate):
+    """Number box for the polling interval. Only valid values can be entered."""
 
+    def createEditor(self, parent, option, index):
+        box = QSpinBox(parent)
+        box.setRange(*INTERVAL_MS)
+        box.setSingleStep(10)
+        return box
+
+    def setEditorData(self, editor, index):
+        value = index.data(Qt.EditRole)
+        editor.setValue(int(value) if value is not None else DEFAULT_INTERVAL_MS)
+
+    def setModelData(self, editor, model, index):
+        editor.interpretText()
+        model.setData(index, editor.value(), Qt.EditRole)
 class PidPage(QWidget):
-    pids_changed = Signal(str, list)
-
+    pids_changed = Signal(str, dict)        # mode code, {"0C": 250, "0D": 1000}
     def __init__(self, mode, parent=None):
         super().__init__(parent)
         self.mode = mode
@@ -154,9 +171,12 @@ class PidPage(QWidget):
 
     def _build_table(self):
         selectable = self.info.selectable
-        self.table = QTableWidget(len(self.entries), 3)
-        self.table.setHorizontalHeaderLabels(
-            [self.info.id_label or "ID", "Name", "What it requests"])
+        columns = 4 if selectable else 3
+        self.table = QTableWidget(len(self.entries), columns)
+        labels = [self.info.id_label or "ID", "Name", "What it requests"]
+        if selectable:
+            labels.append("Interval (ms)")
+        self.table.setHorizontalHeaderLabels(labels)
         self.table.verticalHeader().setVisible(False)
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.table.setSelectionMode(QAbstractItemView.NoSelection)
@@ -172,6 +192,13 @@ class PidPage(QWidget):
         header.setSectionResizeMode(2, QHeaderView.Stretch)
         self.table.setColumnWidth(0, 80)
         self.table.setColumnWidth(1, 260)
+        if selectable:
+            header.setSectionResizeMode(3, QHeaderView.Fixed)
+            self.table.setColumnWidth(3, 120)
+            self.table.setItemDelegateForColumn(3, IntervalDelegate(self.table))
+            self.table.setEditTriggers(QAbstractItemView.CurrentChanged
+                                       | QAbstractItemView.DoubleClicked
+                                       | QAbstractItemView.SelectedClicked)
 
         self.table.setItemDelegateForColumn(0, CheckBoxDelegate(self.table))
 
@@ -193,6 +220,12 @@ class PidPage(QWidget):
             self.table.setItem(row, 0, id_item)
             self.table.setItem(row, 1, name_item)
             self.table.setItem(row, 2, desc_item)
+            if selectable:
+                interval_item = QTableWidgetItem()
+                interval_item.setData(Qt.EditRole, DEFAULT_INTERVAL_MS)
+                interval_item.setTextAlignment(Qt.AlignCenter)
+                interval_item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsEditable)
+                self.table.setItem(row, 3, interval_item)
 
         if selectable:
             self.table.itemChanged.connect(self._on_item_changed)
@@ -205,15 +238,26 @@ class PidPage(QWidget):
                 for r in range(self.table.rowCount())
                 if self.table.item(r, 0).checkState() == Qt.Checked]
 
+    def selection(self):
+        """{"0C": 250, "0D": 1000}: the ticked IDs with their polling interval."""
+        if self.table is None or not self.info.selectable:
+            return {}
+        chosen = {}
+        for r in range(self.table.rowCount()):
+            id_item = self.table.item(r, 0)
+            if id_item.checkState() == Qt.Checked:
+                chosen[id_item.data(_ID_ROLE)] = int(self.table.item(r, 3).data(Qt.EditRole))
+        return chosen
+    
     def _update_count(self):
         if self.info.selectable:
             self.count_label.setText(
                 f"{len(self.checked_pids())} of {len(self.entries)} selected")
 
     def _on_item_changed(self, item):
-        if item.column() == 0:
+        if item.column() in (0, 3):
             self._update_count()
-            self.pids_changed.emit(self.mode, self.checked_pids())
+            self.pids_changed.emit(self.mode, self.selection())
 
     def _set_checks(self, state, only_visible):
         self.table.blockSignals(True)
@@ -224,8 +268,7 @@ class PidPage(QWidget):
         self.table.blockSignals(False)
         self.table.viewport().update()
         self._update_count()
-        self.pids_changed.emit(self.mode, self.checked_pids())
-
+        self.pids_changed.emit(self.mode, self.selection())
     def _apply_filter(self, text):
         text = text.strip().lower()
         for r in range(self.table.rowCount()):
@@ -255,6 +298,8 @@ class PidPage(QWidget):
                 border: 1px solid {c['btn_border']}; border-radius: 8px;
                 padding: 6px 10px; font-size: 10pt; }}
             QLineEdit:focus {{ border: 1px solid {c['accent_blue']}; }}
+            QSpinBox {{ color: {c['text_primary']}; background-color: {c['list_bg']};
+                border: 1px solid {c['btn_border']}; padding: 2px 6px; }}
             QPushButton {{ color: {c['text_primary']}; background-color: {c['btn_bg']};
                 border: 1px solid {c['btn_border']}; border-radius: 8px;
                 padding: 6px 12px; font-size: 10pt; }}
