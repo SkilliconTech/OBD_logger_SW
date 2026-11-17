@@ -370,6 +370,18 @@ class ObdMainWindow(QMainWindow):
         self.content_stack.setVisible(True)
         self.content_stack.setCurrentWidget(page)
 
+    def on_settings(self):
+        page = self.pages["Settings"]
+        self._current_page = "Settings"
+        self.title_label.setText("Settings")
+        self.content_stack.setVisible(True)
+        self.content_stack.setCurrentWidget(page)
+        self.new_tree.clearSelection()
+
+    def on_settings_changed(self, settings):
+        self.base_config = settings
+        self._sync_config()
+
     def on_folder_changed(self, folder):
         self.config_sync.folder = folder
         self._sync_config()
