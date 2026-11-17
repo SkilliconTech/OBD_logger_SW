@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt, Signal, QTimer, QRect, QEvent
+from PySide6.QtCore import Qt, Signal, QTimer, QRect, QEvent, QRegularExpression
 from PySide6.QtGui import QPainter, QColor, QPen
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
@@ -106,6 +106,7 @@ class IntervalDelegate(QStyledItemDelegate):
         editor.interpretText()
         model.setData(index, editor.value(), Qt.EditRole)
 class PidPage(QWidget):
+    frame_changed = Signal(str)             # Mode 02 only, e.g. "00"
     pids_changed = Signal(str, dict)        # mode code, {"0C": 250, "0D": 1000}
     def __init__(self, mode, parent=None):
         super().__init__(parent)
@@ -113,6 +114,7 @@ class PidPage(QWidget):
         self.info = get_mode_info(mode)
         self.entries = get_entries(mode)
         self.table = None
+        self.frame_edit = None
         self._build_ui()
         self.apply_theme(LIGHT)
 
@@ -156,6 +158,21 @@ class PidPage(QWidget):
         self.search.setClearButtonEnabled(True)
         self.search.textChanged.connect(self._apply_filter)
         row.addWidget(self.search, 1)
+        
+        if self.mode == "02":
+            frame_label = QLabel("Frame:")
+            frame_label.setObjectName("pidCount")
+            self.frame_edit = QLineEdit("00")
+            self.frame_edit.setFixedWidth(52)
+            self.frame_edit.setMaxLength(2)
+            self.frame_edit.setValidator(QRegularExpressionValidator(
+                QRegularExpression("[0-9A-Fa-f]*"), self.frame_edit))
+            self.frame_edit.setToolTip(
+                "Freeze frame number (hex, 00 to FF). Used for every PID in this mode.")
+            self.frame_edit.textChanged.connect(self._on_frame_edited)
+            self.frame_edit.editingFinished.connect(self._normalise_frame)
+            row.addWidget(frame_label)
+            row.addWidget(self.frame_edit)
 
         self.count_label = QLabel("")
         self.count_label.setObjectName("pidCount")
@@ -242,7 +259,11 @@ class PidPage(QWidget):
         """Back to the start: nothing ticked, default intervals, no search text."""
         if self.table is None:
             return
-        self.search.clear()                      # shows every row again
+        self.search.clear()                    # shows every row again
+        if self.frame_edit is not None:
+            self.frame_edit.blockSignals(True)
+            self.frame_edit.setText("00")
+            self.frame_edit.blockSignals(False)
         if not self.info.selectable:
             return
         self.table.blockSignals(True)
@@ -254,6 +275,22 @@ class PidPage(QWidget):
         self.table.blockSignals(False)
         self.table.viewport().update()
         self._update_count()
+
+    def frame(self):
+        """Freeze frame number as two hex digits, e.g. "00"."""
+        if self.frame_edit is None:
+            return "00"
+        return (self.frame_edit.text().upper() or "0").zfill(2)
+
+    def _on_frame_edited(self, text):
+        upper = text.upper()
+        if upper != text:
+            self.frame_edit.setText(upper)
+            return
+        self.frame_changed.emit(self.frame())
+
+    def _normalise_frame(self):
+        self.frame_edit.setText(self.frame())
 
     def selection(self):
         """{"0C": 250, "0D": 1000}: the ticked IDs with their polling interval."""
