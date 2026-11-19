@@ -187,66 +187,50 @@ class PidPage(QWidget):
         return row
 
     def _build_table(self):
-        selectable = self.info.selectable
-        columns = 4 if selectable else 3
-        self.table = QTableWidget(len(self.entries), columns)
-        labels = [self.info.id_label or "ID", "Name", "What it requests"]
+      selectable = self.info.selectable
+      self.table = QTableWidget(len(self.entries), 3)          # always 3 columns
+      labels = [self.info.id_label or "ID", "Name", "What it requests"]
+      self.table.setHorizontalHeaderLabels(labels)
+      self.table.verticalHeader().setVisible(False)
+      self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+      self.table.setSelectionMode(QAbstractItemView.NoSelection)
+      self.table.setFocusPolicy(Qt.NoFocus)
+      self.table.setShowGrid(False)
+      self.table.setWordWrap(True)
+      self.table.setTextElideMode(Qt.ElideNone)
+
+      header = self.table.horizontalHeader()
+      header.setHighlightSections(False)
+      header.setSectionResizeMode(0, QHeaderView.Fixed)
+      header.setSectionResizeMode(1, QHeaderView.Interactive)
+      header.setSectionResizeMode(2, QHeaderView.Stretch)
+      self.table.setColumnWidth(0, 80)
+      self.table.setColumnWidth(1, 260)
+
+      self.table.setItemDelegateForColumn(0, CheckBoxDelegate(self.table))
+
+      for row, entry in enumerate(self.entries):
+        shown = f"${entry.ident}" if len(entry.ident) <= 2 else entry.ident
+        id_item = QTableWidgetItem(shown)
+        id_item.setData(_ID_ROLE, entry.ident)
         if selectable:
-            labels.append("Interval (ms)")
-        self.table.setHorizontalHeaderLabels(labels)
-        self.table.verticalHeader().setVisible(False)
-        self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.table.setSelectionMode(QAbstractItemView.NoSelection)
-        self.table.setFocusPolicy(Qt.NoFocus)
-        self.table.setShowGrid(False)
-        self.table.setWordWrap(True)
-        self.table.setTextElideMode(Qt.ElideNone)
+            id_item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsUserCheckable)
+            id_item.setCheckState(Qt.Unchecked)
+        else:
+            id_item.setFlags(Qt.ItemIsEnabled)
 
-        header = self.table.horizontalHeader()
-        header.setHighlightSections(False)
-        header.setSectionResizeMode(0, QHeaderView.Fixed)
-        header.setSectionResizeMode(1, QHeaderView.Interactive)
-        header.setSectionResizeMode(2, QHeaderView.Stretch)
-        self.table.setColumnWidth(0, 80)
-        self.table.setColumnWidth(1, 260)
-        if selectable:
-            header.setSectionResizeMode(3, QHeaderView.Fixed)
-            self.table.setColumnWidth(3, 120)
-            self.table.setItemDelegateForColumn(3, IntervalDelegate(self.table))
-            self.table.setEditTriggers(QAbstractItemView.CurrentChanged
-                                       | QAbstractItemView.DoubleClicked
-                                       | QAbstractItemView.SelectedClicked)
+        name_item = QTableWidgetItem(entry.name)
+        name_item.setFlags(Qt.ItemIsEnabled)
+        desc_item = QTableWidgetItem(entry.description)
+        desc_item.setFlags(Qt.ItemIsEnabled)
 
-        self.table.setItemDelegateForColumn(0, CheckBoxDelegate(self.table))
+        self.table.setItem(row, 0, id_item)
+        self.table.setItem(row, 1, name_item)
+        self.table.setItem(row, 2, desc_item)
 
-        for row, entry in enumerate(self.entries):
-            shown = f"${entry.ident}" if len(entry.ident) <= 2 else entry.ident
-            id_item = QTableWidgetItem(shown)
-            id_item.setData(_ID_ROLE, entry.ident)
-            if selectable:
-                id_item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsUserCheckable)
-                id_item.setCheckState(Qt.Unchecked)
-            else:
-                id_item.setFlags(Qt.ItemIsEnabled)
-
-            name_item = QTableWidgetItem(entry.name)
-            name_item.setFlags(Qt.ItemIsEnabled)
-            desc_item = QTableWidgetItem(entry.description)
-            desc_item.setFlags(Qt.ItemIsEnabled)
-
-            self.table.setItem(row, 0, id_item)
-            self.table.setItem(row, 1, name_item)
-            self.table.setItem(row, 2, desc_item)
-            if selectable:
-                interval_item = QTableWidgetItem()
-                interval_item.setData(Qt.EditRole, DEFAULT_INTERVAL_MS)
-                interval_item.setTextAlignment(Qt.AlignCenter)
-                interval_item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsEditable)
-                self.table.setItem(row, 3, interval_item)
-
-        if selectable:
-            self.table.itemChanged.connect(self._on_item_changed)
-            self._update_count()
+      if selectable:
+        self.table.itemChanged.connect(self._on_item_changed)
+        self._update_count()
 
     def checked_pids(self):
         if self.table is None or not self.info.selectable:
