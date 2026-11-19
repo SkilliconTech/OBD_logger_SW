@@ -1,4 +1,3 @@
-import code
 import os
 from dataclasses import replace
 from services.config_file import import_config, save_config_file, InvalidConfigError
@@ -342,20 +341,19 @@ class ObdMainWindow(QMainWindow):
         self.content_stack.addWidget(widget)
 
     def _build_tree(self):
-        """Modes list. Modes with a checkbox get an info page and a PID page."""
+        """Modes list. Checkbox modes: description + PIDs. Others: description only."""
         self.new_tree.add_modes(MODES)
         c = DARK if self.dark_mode else LIGHT
         for code in MODES:
             if get_mode_info(code).selectable:
-                # click on the name -> information, tick the box -> PID table
-                self.add_page(f"Mode ${code}", ModeInfoPage(code))
-                pid_page = PidPage(code)
-                pid_page.pids_changed.connect(self.on_pids_changed)
-                pid_page.frame_changed.connect(self.on_frame_changed)
-                self.add_page(f"Mode ${code} PIDs", pid_page)
+                # checkbox mode: description and PID table on one page
+                page = PidPage(code)
+                page.pids_changed.connect(self.on_pids_changed)
+                page.frame_changed.connect(self.on_frame_changed)
             else:
-                # no checkbox: the page itself is the only page
-                self.add_page(f"Mode ${code}", PidPage(code))
+                # no checkbox: description only
+                page = ModeInfoPage(code)
+            self.add_page(f"Mode ${code}", page)
         for page in self.pages.values():
             page.apply_theme(c)
         self.settings_page = SettingsPage()
@@ -369,18 +367,29 @@ class ObdMainWindow(QMainWindow):
             "Selected modes: " + (", ".join(modes) or "none"), 3000)
         self._sync_config()
 
-    def on_mode_toggled(self, code, checked):
-        """Box ticked -> PID table. Box unticked -> back to the mode information."""
-        page = self.pages.get(f"Mode ${code} PIDs")
-        if page is not None:
-           page.set_selection_enabled(checked)   # new method we will add
-        page = self.pages.get(page_name)
+    def _show_mode_page(self, code):
+        name = f"Mode ${code}"
+        page = self.pages.get(name)
         if page is None:
             return
-        self._current_page = page_name
-        self.title_label.setText(f"Mode ${code}")
+        self._current_page = name
+        self.title_label.setText(name)
         self.content_stack.setVisible(True)
         self.content_stack.setCurrentWidget(page)
+
+    def _refresh_pages_enabled(self):
+        """A mode's PIDs can be ticked only while the mode's own box is ticked."""
+        for code in MODES:
+            page = self.pages.get(f"Mode ${code}")
+            if hasattr(page, "set_selection_enabled"):
+                page.set_selection_enabled(code in self.selected_modes)
+
+    def on_mode_toggled(self, code, checked):
+        """Box ticked or unticked: enable or disable that PID table, show the page."""
+        page = self.pages.get(f"Mode ${code}")
+        if hasattr(page, "set_selection_enabled"):
+            page.set_selection_enabled(checked)
+        self._show_mode_page(code)
 
     def on_settings(self):
         page = self.pages["Settings"]
@@ -440,7 +449,8 @@ class ObdMainWindow(QMainWindow):
         self.selected_pids[mode] = pids
         self.statusBar().showMessage(
             f"Mode {mode}: " + (", ".join(pids) or "no PIDs selected"), 3000)
-        
+        self._sync_config()
+
     def on_tree_item_clicked(self, item, column):
         self.settings_tree.clearSelection()
         if item.childCount() > 0:
@@ -452,21 +462,11 @@ class ObdMainWindow(QMainWindow):
         if code in ("05", "08"):
             return
 
-        name = item.text(0)
-        if name == "Generate Report":
+        if item.text(0) == "Generate Report":
             self.on_generate()
             return
 
-        page_name = f"{name} PIDs"   # always show description + PIDs
-
-        page = self.pages.get(page_name)
-        if page is None:
-            return
-
-        self._current_page = page_name
-        self.title_label.setText(name)
-        self.content_stack.setVisible(True)
-        self.content_stack.setCurrentWidget(page)
+        self._show_mode_page(code)
 
     def clear_page_area(self):
         """Empty right-hand side (no page open)."""
@@ -508,9 +508,8 @@ class ObdMainWindow(QMainWindow):
         self.imported_list.takeItem(self.imported_list.row(item))
         if path in self.imported_files:
             self.imported_files.remove(path)
-        self.clear_page_area()          # right side empty until another file is picked
+        self.on_new()                   # back to the default configuration
         self.statusBar().showMessage(f"Removed '{name}'", 3000)
-
     def eventFilter(self, obj, event):
         """Click on the trash icon of the selected row removes the file."""
         if obj is self.imported_list.viewport():
@@ -609,12 +608,13 @@ class ObdMainWindow(QMainWindow):
         self.base_config = replace(config, requests=[])
         self.new_tree.set_checked_modes(selection.modes)
         for mode, chosen in selection.pids.items():
-            page = self.pages.get(f"Mode ${mode} PIDs")
+            page = self.pages.get(f"Mode ${mode}")
             if page is not None:
-                page.set_selection(chosen, selection.frame)
+                page.set_selection(list(chosen), selection.frame)
         self.selected_modes = list(selection.modes)
-        self.selected_pids = {m: dict(c) for m, c in selection.pids.items()}
+        self.selected_pids = {m: list(c) for m, c in selection.pids.items()}
         self.frame_02 = selection.frame
+        self._refresh_pages_enabled()
 
         loaded = len(config.requests) - len(selection.skipped)
         if selection.skipped:

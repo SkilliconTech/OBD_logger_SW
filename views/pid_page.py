@@ -3,13 +3,11 @@ from PySide6.QtGui import QPainter, QColor, QPen, QRegularExpressionValidator
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
     QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView,
-    QStyledItemDelegate, QStyle ,QStyledItemDelegate, QStyle, QSpinBox
+    QStyledItemDelegate, QStyle
 )
 
 
-from models.config_rules import INTERVAL_MS
 from models.pid_directory import get_entries, get_mode_info
-from services.config_builder import DEFAULT_INTERVAL_MS
 from resources.theme import LIGHT
 from resources.icons import draw_checked_box
 
@@ -19,6 +17,10 @@ _ID_ROLE = Qt.UserRole
 class CheckBoxDelegate(QStyledItemDelegate):
     SIZE = 16
     LEFT_PAD = 28          # space reserved for the checkbox
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.enabled = True        # False: PIDs are shown but cannot be ticked
 
     def sizeHint(self, option, index):
         size = super().sizeHint(option, index)
@@ -34,6 +36,8 @@ class CheckBoxDelegate(QStyledItemDelegate):
     def editorEvent(self, event, model, option, index):
         """Tick or untick only when the checkbox itself is clicked."""
         if index.column() == 0 and (index.flags() & Qt.ItemIsUserCheckable):
+            if not self.enabled:
+                return False
             if (event.type() == QEvent.MouseButtonRelease
                     and event.button() == Qt.LeftButton):
                 hit = self._box_rect(option.rect).adjusted(-4, -6, 4, 6)
@@ -81,7 +85,7 @@ class CheckBoxDelegate(QStyledItemDelegate):
         # ---- PID text (always to the right of the checkbox) ----
         text = str(index.data(Qt.DisplayRole) or "")
         text_rect = option.rect.adjusted(self.LEFT_PAD, 0, -4, 0)
-        painter.setPen(QColor("#1D2631"))
+        painter.setPen(QColor("#1D2631") if self.enabled else QColor("#9AA1AE"))
         font = painter.font()
         font.setPointSizeF(10)
         painter.setFont(font)
@@ -89,25 +93,11 @@ class CheckBoxDelegate(QStyledItemDelegate):
 
         painter.restore()
 
-class IntervalDelegate(QStyledItemDelegate):
-    """Number box for the polling interval. Only valid values can be entered."""
 
-    def createEditor(self, parent, option, index):
-        box = QSpinBox(parent)
-        box.setRange(*INTERVAL_MS)
-        box.setSingleStep(10)
-        return box
-
-    def setEditorData(self, editor, index):
-        value = index.data(Qt.EditRole)
-        editor.setValue(int(value) if value is not None else DEFAULT_INTERVAL_MS)
-
-    def setModelData(self, editor, model, index):
-        editor.interpretText()
-        model.setData(index, editor.value(), Qt.EditRole)
 class PidPage(QWidget):
     frame_changed = Signal(str)             # Mode 02 only, e.g. "00"
-    pids_changed = Signal(str, dict)        # mode code, {"0C": 250, "0D": 1000}
+    pids_changed = Signal(str, list)        # mode code, ["0C", "0D"]
+
     def __init__(self, mode, parent=None):
         super().__init__(parent)
         self.mode = mode
@@ -177,12 +167,12 @@ class PidPage(QWidget):
         self.count_label = QLabel("")
         self.count_label.setObjectName("pidCount")
         if self.info.selectable:
-            select_btn = QPushButton("Select all")
-            clear_btn = QPushButton("Clear all")
-            select_btn.clicked.connect(lambda: self._set_checks(Qt.Checked, False))
-            clear_btn.clicked.connect(lambda: self._set_checks(Qt.Unchecked, False))
-            row.addWidget(select_btn)
-            row.addWidget(clear_btn)
+            self.select_btn = QPushButton("Select all")
+            self.clear_btn = QPushButton("Clear all")
+            self.select_btn.clicked.connect(lambda: self._set_checks(Qt.Checked, False))
+            self.clear_btn.clicked.connect(lambda: self._set_checks(Qt.Unchecked, False))
+            row.addWidget(self.select_btn)
+            row.addWidget(self.clear_btn)
             row.addWidget(self.count_label)
         return row
 
@@ -207,7 +197,8 @@ class PidPage(QWidget):
       self.table.setColumnWidth(0, 80)
       self.table.setColumnWidth(1, 260)
 
-      self.table.setItemDelegateForColumn(0, CheckBoxDelegate(self.table))
+      self._check_delegate = CheckBoxDelegate(self.table)
+      self.table.setItemDelegateForColumn(0, self._check_delegate)
 
       for row, entry in enumerate(self.entries):
         shown = f"${entry.ident}" if len(entry.ident) <= 2 else entry.ident
@@ -231,6 +222,7 @@ class PidPage(QWidget):
       if selectable:
         self.table.itemChanged.connect(self._on_item_changed)
         self._update_count()
+        self.set_selection_enabled(False)     # tickable only after the mode box is ticked
 
     def checked_pids(self):
         if self.table is None or not self.info.selectable:
@@ -240,7 +232,7 @@ class PidPage(QWidget):
                 if self.table.item(r, 0).checkState() == Qt.Checked]
     
     def reset(self):
-        """Back to the start: nothing ticked, default intervals, no search text."""
+        """Back to the start: nothing ticked, no search text."""
         if self.table is None:
             return
         self.search.clear()                    # shows every row again
@@ -253,15 +245,21 @@ class PidPage(QWidget):
         self.table.blockSignals(True)
         for r in range(self.table.rowCount()):
             self.table.item(r, 0).setCheckState(Qt.Unchecked)
-            interval_item = self.table.item(r, 3)
-            if interval_item is not None:
-                interval_item.setData(Qt.EditRole, DEFAULT_INTERVAL_MS)
         self.table.blockSignals(False)
         self.table.viewport().update()
         self._update_count()
+        self.set_selection_enabled(False)
 
     def set_selection_enabled(self, enabled: bool):
-       """When False: user can see PIDs but cannot select them."""
+        """When False: the user can see the PIDs but cannot tick them."""
+        if self.table is None or not self.info.selectable:
+            return
+        self._check_delegate.enabled = enabled
+        self.select_btn.setEnabled(enabled)
+        self.clear_btn.setEnabled(enabled)
+        if self.frame_edit is not None:
+            self.frame_edit.setEnabled(enabled)
+        self.table.viewport().update()
 
     def frame(self):
         """Freeze frame number as two hex digits, e.g. "00"."""
@@ -280,19 +278,14 @@ class PidPage(QWidget):
         self.frame_edit.setText(self.frame())
 
     def set_selection(self, chosen, frame="00"):
-        """Tick exactly {id: interval} and untick the rest (used by Import)."""
+        """Tick exactly these IDs (a list) and untick the rest (used by Import)."""
         if self.table is None or not self.info.selectable:
             return
         self.table.blockSignals(True)
         for r in range(self.table.rowCount()):
             id_item = self.table.item(r, 0)
             ident = id_item.data(_ID_ROLE)
-            if ident in chosen:
-                id_item.setCheckState(Qt.Checked)
-                self.table.item(r, 3).setData(Qt.EditRole, int(chosen[ident]))
-            else:
-                id_item.setCheckState(Qt.Unchecked)
-                self.table.item(r, 3).setData(Qt.EditRole, DEFAULT_INTERVAL_MS)
+            id_item.setCheckState(Qt.Checked if ident in chosen else Qt.Unchecked)
         self.table.blockSignals(False)
         if self.frame_edit is not None:
             self.frame_edit.blockSignals(True)
@@ -301,26 +294,15 @@ class PidPage(QWidget):
         self.table.viewport().update()
         self._update_count()
 
-    def selection(self):
-        """{"0C": 250, "0D": 1000}: the ticked IDs with their polling interval."""
-        if self.table is None or not self.info.selectable:
-            return {}
-        chosen = {}
-        for r in range(self.table.rowCount()):
-            id_item = self.table.item(r, 0)
-            if id_item.checkState() == Qt.Checked:
-                chosen[id_item.data(_ID_ROLE)] = int(self.table.item(r, 3).data(Qt.EditRole))
-        return chosen
-    
     def _update_count(self):
         if self.info.selectable:
             self.count_label.setText(
                 f"{len(self.checked_pids())} of {len(self.entries)} selected")
 
     def _on_item_changed(self, item):
-        if item.column() in (0, 3):
+        if item.column() == 0:
             self._update_count()
-            self.pids_changed.emit(self.mode, self.selection())
+            self.pids_changed.emit(self.mode, self.checked_pids())
 
     def _set_checks(self, state, only_visible):
         self.table.blockSignals(True)
@@ -331,7 +313,8 @@ class PidPage(QWidget):
         self.table.blockSignals(False)
         self.table.viewport().update()
         self._update_count()
-        self.pids_changed.emit(self.mode, self.selection())
+        self.pids_changed.emit(self.mode, self.checked_pids())
+
     def _apply_filter(self, text):
         text = text.strip().lower()
         for r in range(self.table.rowCount()):
@@ -361,8 +344,6 @@ class PidPage(QWidget):
                 border: 1px solid {c['btn_border']}; border-radius: 8px;
                 padding: 6px 10px; font-size: 10pt; }}
             QLineEdit:focus {{ border: 1px solid {c['accent_blue']}; }}
-            QSpinBox {{ color: {c['text_primary']}; background-color: {c['list_bg']};
-                border: 1px solid {c['btn_border']}; padding: 2px 6px; }}
             QPushButton {{ color: {c['text_primary']}; background-color: {c['btn_bg']};
                 border: 1px solid {c['btn_border']}; border-radius: 8px;
                 padding: 6px 12px; font-size: 10pt; }}
