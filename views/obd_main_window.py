@@ -371,7 +371,9 @@ class ObdMainWindow(QMainWindow):
 
     def on_mode_toggled(self, code, checked):
         """Box ticked -> PID table. Box unticked -> back to the mode information."""
-        page_name = f"Mode ${code} PIDs" if checked else f"Mode ${code}"
+        page = self.pages.get(f"Mode ${code} PIDs")
+        if page is not None:
+           page.set_selection_enabled(checked)   # new method we will add
         page = self.pages.get(page_name)
         if page is None:
             return
@@ -455,9 +457,7 @@ class ObdMainWindow(QMainWindow):
             self.on_generate()
             return
 
-        page_name = name
-        if item.checkState(0) == Qt.Checked:          # ticked mode -> its PID table
-            page_name = f"{name} PIDs"
+        page_name = f"{name} PIDs"   # always show description + PIDs
 
         page = self.pages.get(page_name)
         if page is None:
