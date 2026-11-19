@@ -276,6 +276,9 @@ class PidPage(QWidget):
         self.table.viewport().update()
         self._update_count()
 
+    def set_selection_enabled(self, enabled: bool):
+       """When False: user can see PIDs but cannot select them."""
+
     def frame(self):
         """Freeze frame number as two hex digits, e.g. "00"."""
         if self.frame_edit is None:
