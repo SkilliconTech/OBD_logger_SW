@@ -21,7 +21,7 @@ class CheckBoxDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.enabled = True        # False: PIDs are shown but cannot be ticked
-
+        self.text_color = QColor("#1D2631")   # changed by PidPage.apply_theme()
     def sizeHint(self, option, index):
         size = super().sizeHint(option, index)
         if index.column() == 0 and (index.flags() & Qt.ItemIsUserCheckable):
@@ -85,7 +85,7 @@ class CheckBoxDelegate(QStyledItemDelegate):
         # ---- PID text (always to the right of the checkbox) ----
         text = str(index.data(Qt.DisplayRole) or "")
         text_rect = option.rect.adjusted(self.LEFT_PAD, 0, -4, 0)
-        painter.setPen(QColor("#1D2631") if self.enabled else QColor("#9AA1AE"))
+        painter.setPen(self.text_color if self.enabled else QColor("#9AA1AE"))
         font = painter.font()
         font.setPointSizeF(10)
         painter.setFont(font)
@@ -335,6 +335,10 @@ class PidPage(QWidget):
         self._fit_rows()
 
     def apply_theme(self, c):
+        delegate = getattr(self, "_check_delegate", None)
+        if delegate is not None:
+            delegate.text_color = QColor(c['text_primary'])
+            self.table.viewport().update()
         self.setStyleSheet(f"""
             QLabel#pidHeading {{ color: {c['text_primary']};
                 font-size: 13pt; font-weight: 600; }}
