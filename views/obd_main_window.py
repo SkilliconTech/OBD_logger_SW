@@ -28,7 +28,7 @@ from views.mode_tree import ModeTree
 from models.logger_config import LoggerConfig
 from views.settings_page import SettingsPage
 from views.settings_tree import SettingsTree
-from services.config_builder import build_config
+from services.config_builder import build_config, DEFAULT_INTERVAL_MS
 from services.config_sync import ConfigSync, describe_result
 from views.target_selector import TargetSelector
 from views.problems_bar import ProblemsBar
@@ -78,6 +78,7 @@ class ObdMainWindow(QMainWindow):
         self.imported_files = []
         self.selected_modes = []
         self.selected_pids = {}
+        self.pid_intervals = {}                # remembered interval per request: {"01": {"0C": 250}}
         self.config_sync = ConfigSync()
         self.save_path = ""                     # file chosen with Save / Save As
         self.base_config = LoggerConfig()      # the settings (bitrate, IDs, timings)
@@ -413,9 +414,15 @@ class ObdMainWindow(QMainWindow):
         self._sync_config()
 
     def _build_config(self):
-        return build_config(self.selected_modes, self.selected_pids,
+        # ticked PIDs keep their remembered interval; new ones get the default
+        pids = {
+            mode: {ident: self.pid_intervals.get(mode, {}).get(ident, DEFAULT_INTERVAL_MS)
+                   for ident in idents}
+            for mode, idents in self.selected_pids.items()
+        }
+        return build_config(self.selected_modes, pids,
                             self.base_config, self.frame_02)
-
+    
     def _sync_config(self):
         """After every change: check the configuration. If a logger drive is chosen,
         keep its config.json up to date. The Save button handles the saved file."""
@@ -543,6 +550,7 @@ class ObdMainWindow(QMainWindow):
                 page.reset()
         self.selected_modes = []
         self.selected_pids = {}
+        self.pid_intervals = {}
         self.settings_tree.clearSelection()
         self.clear_page_area()
         self.statusBar().showMessage(
@@ -613,6 +621,7 @@ class ObdMainWindow(QMainWindow):
                 page.set_selection(list(chosen), selection.frame)
         self.selected_modes = list(selection.modes)
         self.selected_pids = {m: list(c) for m, c in selection.pids.items()}
+        self.pid_intervals = {m: dict(c) for m, c in selection.pids.items()}
         self.frame_02 = selection.frame
         self._refresh_pages_enabled()
 
@@ -620,9 +629,9 @@ class ObdMainWindow(QMainWindow):
         if selection.skipped:
             lines = "\n".join(f"- {text}: {why}" for text, why in selection.skipped)
             QMessageBox.information(
-                self, "Some requests were not loaded",
-                "These requests cannot be shown in this tool, so they will not be in "
-                "config.json the next time it is saved:\n" + lines)
+                self, "Unsupported requests were not imported",
+                "These requests are not supported by this tool, so they were NOT "
+                "imported and will not be in config.json when it is saved:\n" + lines)      
             self.problems_bar.show_idle(
                 f"Imported {name}. Not saved yet: change something to save.")
         else:

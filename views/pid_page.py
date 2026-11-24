@@ -149,20 +149,6 @@ class PidPage(QWidget):
         self.search.textChanged.connect(self._apply_filter)
         row.addWidget(self.search, 1)
         
-        if self.mode == "02":
-            frame_label = QLabel("Frame:")
-            frame_label.setObjectName("pidCount")
-            self.frame_edit = QLineEdit("00")
-            self.frame_edit.setFixedWidth(52)
-            self.frame_edit.setMaxLength(2)
-            self.frame_edit.setValidator(QRegularExpressionValidator(
-                QRegularExpression("[0-9A-Fa-f]*"), self.frame_edit))
-            self.frame_edit.setToolTip(
-                "Freeze frame number (hex, 00 to FF). Used for every PID in this mode.")
-            self.frame_edit.textChanged.connect(self._on_frame_edited)
-            self.frame_edit.editingFinished.connect(self._normalise_frame)
-            row.addWidget(frame_label)
-            row.addWidget(self.frame_edit)
 
         self.count_label = QLabel("")
         self.count_label.setObjectName("pidCount")
