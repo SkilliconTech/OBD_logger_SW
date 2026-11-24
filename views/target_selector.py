@@ -5,7 +5,7 @@ from resources.theme import LIGHT
 from services.drive_detector import list_removable_drives
 from services.mtp_device import MTP_PREFIX, STORAGE_NAME
 from views.mtp_tasks import MtpScanTask
-
+from views.upload_button import UploadButton
 
 class TargetSelector(QWidget):
     """Top-bar control: pick the logger's drive. It only reports the choice;
@@ -33,7 +33,7 @@ class TargetSelector(QWidget):
         self.drive_combo.setSizeAdjustPolicy(QComboBox.AdjustToContents)
         self.drive_combo.currentIndexChanged.connect(self._on_drive_index)
 
-        self.send_button = QPushButton("Send to logger")
+        self.send_button = UploadButton()
         self.send_button.setVisible(False)
         self.send_button.clicked.connect(lambda: self.send_requested.emit())
 
@@ -53,6 +53,8 @@ class TargetSelector(QWidget):
 
     
     def _on_drive_index(self, index):
+        if not self._sending:
+            self.send_button.set_state("idle")     # forget an old green / red result
         self._update_send_button()
         self.drive_changed.emit(self.current_drive())
 
@@ -98,8 +100,12 @@ class TargetSelector(QWidget):
 
     def set_sending(self, sending):
         self._sending = sending
-        self.send_button.setText("Sending..." if sending else "Send to logger")
+        self.send_button.set_state("sending" if sending else "idle")
         self._update_send_button()
+
+    def show_result(self, ok):
+        """Turn the Upload image green (sent and checked) or red (failed)."""
+        self.send_button.show_result(ok)
 
     def _update_send_button(self):
         current = self.current_drive()
@@ -119,8 +125,4 @@ class TargetSelector(QWidget):
                 padding: 5px 10px; font-size: 10pt; }}
             QComboBox QAbstractItemView {{ color: {c['text_primary']};
                 background-color: {c['list_bg']}; }}
-            QPushButton {{ color: {c['text_primary']}; background-color: {c['btn_bg']};
-                border: 1px solid {c['btn_border']}; border-radius: 8px;
-                padding: 5px 12px; font-size: 10pt; }}
-            QPushButton:disabled {{ color: {c['text_secondary']}; }}
         """)
