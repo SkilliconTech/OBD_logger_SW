@@ -1,5 +1,6 @@
 import os
 from dataclasses import replace
+from unittest import result
 from services.config_file import import_config, save_config_file, InvalidConfigError
 from services.config_importer import selection_from_config
 from services.config_serializer import ConfigFormatError, to_json_text
@@ -442,6 +443,7 @@ class ObdMainWindow(QMainWindow):
 
     def _on_send_done(self, result):
         self.target_selector.set_sending(False)
+        self.target_selector.show_result(result.ok)
         if result.ok:
             self.statusBar().showMessage(result.message, 8000)
             QMessageBox.information(self, "Transfer complete", result.message)
