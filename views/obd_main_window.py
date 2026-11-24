@@ -2,10 +2,10 @@ import os
 from dataclasses import replace
 from services.config_file import import_config, save_config_file, InvalidConfigError
 from services.config_importer import selection_from_config
-from services.config_serializer import ConfigFormatError
+from services.config_serializer import ConfigFormatError, to_json_text
 from services.config_validator import validate
 
-from PySide6.QtCore import Qt, QSize, QRect, QEvent, QTimer, QUrl
+from PySide6.QtCore import Qt, QSize, QRect, QEvent, QTimer, QUrl, QThreadPool
 from PySide6.QtGui import (
     QFont, QColor, QAction, QShortcut, QKeySequence, QPainter, QDesktopServices
 )
@@ -31,6 +31,8 @@ from views.settings_tree import SettingsTree
 from services.config_builder import build_config, DEFAULT_INTERVAL_MS
 from services.config_sync import ConfigSync, describe_result
 from views.target_selector import TargetSelector
+from views.mtp_tasks import MtpSendTask
+from services.mtp_device import MTP_PREFIX
 from views.problems_bar import ProblemsBar
 
 APP_TITLE = "OBD Configuration"
@@ -83,6 +85,8 @@ class ObdMainWindow(QMainWindow):
         self.save_path = ""                     # file chosen with Save / Save As
         self.base_config = LoggerConfig()      # the settings (bitrate, IDs, timings)
         self.frame_02 = "00"                   # freeze frame number for Mode 02
+        self.mtp_device = ""                   # logger chosen over USB, e.g. "OBD_1757338"
+        self._send_task = None
         self.setWindowTitle(APP_TITLE)
         self.resize(1400, 950)
         self._create_actions()
@@ -278,6 +282,7 @@ class ObdMainWindow(QMainWindow):
         topbar.addStretch(1)
         self.target_selector = TargetSelector()
         self.target_selector.drive_changed.connect(self.on_drive_changed)
+        self.target_selector.send_requested.connect(self.on_send_to_logger)
         topbar.addWidget(self.target_selector)
         topbar.addSpacing(10)
 
@@ -410,8 +415,39 @@ class ObdMainWindow(QMainWindow):
         self._sync_config()
 
     def on_drive_changed(self, drive):
-        self.config_sync.drive = drive
+        if drive.startswith(MTP_PREFIX):          # logger on USB: sent with the button
+            self.mtp_device = drive[len(MTP_PREFIX):]
+            self.config_sync.drive = ""
+        else:                                     # drive letter: written after every change
+            self.mtp_device = ""
+            self.config_sync.drive = drive
         self._sync_config()
+
+    def on_send_to_logger(self):
+        """Send config.json to the logger's SD card over USB, then check it."""
+        if not self.mtp_device:
+            return
+        config = self._build_config()
+        issues = validate(config)
+        if issues:
+            lines = "\n".join(f"- {i.field}: {i.message} {i.fix}" for i in issues[:6])
+            QMessageBox.warning(self, "Cannot send yet", lines)
+            return
+        self.target_selector.set_sending(True)
+        self.statusBar().showMessage(f"Sending config.json to {self.mtp_device} ...")
+        task = MtpSendTask(self.mtp_device, to_json_text(config))
+        task.signals.done.connect(self._on_send_done)
+        self._send_task = task                    # keep it alive until it reports
+        QThreadPool.globalInstance().start(task)
+
+    def _on_send_done(self, result):
+        self.target_selector.set_sending(False)
+        if result.ok:
+            self.statusBar().showMessage(result.message, 8000)
+            QMessageBox.information(self, "Transfer complete", result.message)
+        else:
+            self.statusBar().showMessage("Transfer failed.", 8000)
+            QMessageBox.warning(self, "Transfer failed", result.message)
 
     def _build_config(self):
         # ticked PIDs keep their remembered interval; new ones get the default

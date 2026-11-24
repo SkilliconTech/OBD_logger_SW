@@ -117,7 +117,7 @@ class TargetSelector(QWidget):
             QComboBox {{ color: {c['text_primary']}; background-color: {c['list_bg']};
                 border: 1px solid {c['btn_border']}; border-radius: 8px;
                 padding: 5px 10px; font-size: 10pt; }}
-                        QComboBox QAbstractItemView {{ color: {c['text_primary']};
+            QComboBox QAbstractItemView {{ color: {c['text_primary']};
                 background-color: {c['list_bg']}; }}
             QPushButton {{ color: {c['text_primary']}; background-color: {c['btn_bg']};
                 border: 1px solid {c['btn_border']}; border-radius: 8px;
