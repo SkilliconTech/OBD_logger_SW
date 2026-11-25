@@ -81,7 +81,7 @@ class TargetSelector(QWidget):
         for device in self._mtp:
             state = (f"{STORAGE_NAME} ready" if device.storage_ready
                      else f"{STORAGE_NAME} not available")
-            entries.append((MTP_PREFIX + device.name, f"{device.name}  (USB, {state})"))
+            entries.append((MTP_PREFIX + device.name, f"{device.name}"))
         if entries == self._known:
             return                                # nothing changed: don't disturb the list
         self._known = entries

@@ -51,7 +51,9 @@ class SettingsPage(QWidget):
         self.startup_delay = self._spin(R.STARTUP_DELAY_MS[0], R.STARTUP_DELAY_MS[1], 100)
         self.run_duration = self._spin(0, R.RUN_DURATION_MS[1], 1000)
         self.run_duration.setSpecialValueText("0 (run continuously)")
-        self.response_timeout = self._spin(R.RESPONSE_TIMEOUT_MS[0], R.RESPONSE_TIMEOUT_MS[1], 10)
+        # Response timeout is not on the screen any more. The file format still needs the key,
+        # so its value is kept here: 70 ms by default, or whatever an imported file contained.
+        self._response_timeout_ms = LoggerConfig().response_timeout_ms
 
         form = QFormLayout()
         form.setLabelAlignment(Qt.AlignLeft)
@@ -63,7 +65,6 @@ class SettingsPage(QWidget):
         form.addRow("Receive ID (rx_id)", self.rx_id)
         form.addRow("Startup delay", self.startup_delay)
         form.addRow("Run duration", self.run_duration)
-        form.addRow("Response timeout", self.response_timeout)
         lay.addLayout(form)
 
         self.problems = QLabel("")
@@ -77,7 +78,7 @@ class SettingsPage(QWidget):
         self.address_bits.currentIndexChanged.connect(self._on_address_bits_changed)
         self.tx_id.textChanged.connect(lambda text: self._on_id_edited(self.tx_id, text))
         self.rx_id.textChanged.connect(lambda text: self._on_id_edited(self.rx_id, text))
-        for box in (self.startup_delay, self.run_duration, self.response_timeout):
+        for box in (self.startup_delay, self.run_duration):
             box.valueChanged.connect(self._on_changed)
 
         self.set_settings(LoggerConfig())
@@ -101,7 +102,7 @@ class SettingsPage(QWidget):
             rx_id=self.rx_id.text(),
             startup_delay_ms=self.startup_delay.value(),
             run_duration_ms=self.run_duration.value(),
-            response_timeout_ms=self.response_timeout.value(),
+            response_timeout_ms=self._response_timeout_ms,
         )
 
     def set_settings(self, config):
@@ -114,7 +115,7 @@ class SettingsPage(QWidget):
         self.rx_id.setText(str(config.rx_id))
         self.startup_delay.setValue(config.startup_delay_ms)
         self.run_duration.setValue(config.run_duration_ms)
-        self.response_timeout.setValue(config.response_timeout_ms)
+        self._response_timeout_ms = config.response_timeout_ms
         self._loading = False
         self._show_problems(self.current_settings())
 
