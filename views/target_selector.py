@@ -23,6 +23,7 @@ class TargetSelector(QWidget):
         self._sending = False
         self._ticks = 0
         self._scan_task = None
+        self._seen_mtp = set()           # loggers on USB that were there at the last check
         lay = QHBoxLayout(self)
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(8)
@@ -91,13 +92,15 @@ class TargetSelector(QWidget):
         self.drive_combo.addItem("No logger drive", "")
         for value, text in entries:
             self.drive_combo.addItem(text, value)
-        index = self.drive_combo.findData(previous)
-        if index >= 0:
-            self.drive_combo.setCurrentIndex(index)
-        elif self.drive_combo.count() > 1:
-            self.drive_combo.setCurrentIndex(1)   # first real device
-        else:
-            self.drive_combo.setCurrentIndex(0)   # only "No logger drive"
+        # a logger that was not there at the last check has just been plugged in
+        usb_now = [value for value, _ in entries if value.startswith(MTP_PREFIX)]
+        just_plugged = [v for v in usb_now if v not in self._seen_mtp]
+        self._seen_mtp = set(usb_now)
+        if not previous and just_plugged:         # nothing chosen yet: show the new logger
+            index = self.drive_combo.findData(just_plugged[0])
+        else:                                     # keep the user's choice if it is still there
+            index = max(0, self.drive_combo.findData(previous))
+        self.drive_combo.setCurrentIndex(index)
         self.drive_combo.blockSignals(False)
         self._update_send_button()
         if self.current_drive() != previous:      # the chosen card or logger went away
