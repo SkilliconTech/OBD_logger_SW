@@ -110,10 +110,10 @@ class ObdMainWindow(QMainWindow):
         self.act_new = QAction("New", self)
         self.act_new.setShortcut("Ctrl+N")
         self.act_new.triggered.connect(self.on_new)
-        self.act_save = QAction("Save", self)
+        self.act_save = QAction("Export", self)
         self.act_save.setShortcut("Ctrl+S")
         self.act_save.triggered.connect(self.on_save)
-        self.act_save_as = QAction("Save As...", self)
+        self.act_save_as = QAction("Export As...", self)
         self.act_save_as.setShortcut("Ctrl+Shift+S")
         self.act_save_as.triggered.connect(self.on_save_as)
         for a in (self.act_new, self.act_save, self.act_save_as):
@@ -178,7 +178,7 @@ class ObdMainWindow(QMainWindow):
         self.new_button = QPushButton("+  New")
         self.new_button.setObjectName("newButton")
         self.new_button.clicked.connect(self.on_new)
-        self.save_button = QPushButton("Save")
+        self.save_button = QPushButton("Export")
         self.save_button.setObjectName("saveButton")
         self.save_button.clicked.connect(self.on_save)
         self.save_arrow_button = QPushButton("▾")
@@ -479,17 +479,16 @@ class ObdMainWindow(QMainWindow):
             if self.save_path:
                 self.problems_bar.show_idle(
                     f"Saved to the logger: {os.path.normpath(logger_file)}. "
-                    f"Click Save to update {os.path.normpath(self.save_path)}.")
+                    f"Click Export to update {os.path.normpath(self.save_path)}.")
             else:
                 self.problems_bar.show_saved(logger_file)
             return
         if self.save_path:
             self.problems_bar.show_idle(
-                f"Unsaved changes. Click Save to update {os.path.normpath(self.save_path)}")
+                f"Not exported yet. Click Export to update {os.path.normpath(self.save_path)}")
         else:
             self.problems_bar.show_idle(
-                "Ready. Click Save to choose where to save config.json.")
-
+                "Ready. Click Export to choose where to export config.json.")
     def on_pids_changed(self, mode, pids):
         self.selected_pids[mode] = pids
         self.statusBar().showMessage(
@@ -606,7 +605,7 @@ class ObdMainWindow(QMainWindow):
         """Always ask for a path."""
         start = self.save_path or "config.json"
         path, _ = QFileDialog.getSaveFileName(
-            self, "Save config.json", start, "JSON files (*.json);;All files (*)")
+            self, "Export config.json", start, "JSON files (*.json);;All files (*)")
         if path and self._write_config(path):
             self.save_path = path
 
@@ -617,11 +616,11 @@ class ObdMainWindow(QMainWindow):
         except InvalidConfigError as error:
             self.problems_bar.show_issues(error.issues)
             lines = "\n".join(f"- {i.field}: {i.message} {i.fix}" for i in error.issues[:6])
-            QMessageBox.warning(self, "Cannot save yet", lines)
+            QMessageBox.warning(self, "Cannot export yet", lines)
             return False
         except OSError as error:
             self.problems_bar.show_failure(path, error)
-            QMessageBox.warning(self, "Could not save", f"{path}\n\n{error}")
+            QMessageBox.warning(self, "Could not export", f"{path}\n\n{error}")
             return False
         self.problems_bar.show_saved(str(saved))
         return True
@@ -669,9 +668,9 @@ class ObdMainWindow(QMainWindow):
             QMessageBox.information(
                 self, "Unsupported requests were not imported",
                 "These requests are not supported by this tool, so they were NOT "
-                "imported and will not be in config.json when it is saved:\n" + lines)      
+                "imported and will not be in config.json when it is exported:\n" + lines)      
             self.problems_bar.show_idle(
-                f"Imported {name}. Not saved yet: change something to save.")
+                f"Imported {name}. Not exported yet: change something to export.")
         else:
             self._sync_config()
         self.statusBar().showMessage(
