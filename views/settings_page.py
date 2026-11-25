@@ -1,9 +1,10 @@
-from PySide6.QtCore import Qt, Signal, QRegularExpression
-from PySide6.QtGui import QRegularExpressionValidator
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QFormLayout, QLabel, QComboBox, QLineEdit,
     QSpinBox, QPushButton
 )
+from pathlib import Path
+from PySide6.QtGui import QRegularExpressionValidator, QPixmap, QPainter, QColor, QPolygon
+from PySide6.QtCore import Qt, Signal, QRegularExpression, QPoint, QTemporaryDir
 
 from models import config_rules as R
 from models.logger_config import LoggerConfig
@@ -154,6 +155,30 @@ class SettingsPage(QWidget):
 
     # ------------------------------------------------------------------ theme
     def apply_theme(self, c):
+        # Build small up/down arrow icons in memory so we don't need external PNG files.
+        def _arrow_png(up: bool) -> str:
+            pm = QPixmap(24, 16)
+            pm.fill(Qt.transparent)
+            p = QPainter(pm)
+            p.setRenderHint(QPainter.Antialiasing)
+            p.setBrush(QColor(c["text_primary"]))
+            p.setPen(Qt.NoPen)
+            if up:
+                pts = [QPoint(6, 11), QPoint(12, 4), QPoint(18, 11)]
+            else:
+                pts = [QPoint(6, 5), QPoint(12, 12), QPoint(18, 5)]
+            p.drawPolygon(QPolygon(pts))
+            p.end()
+            # Keep one temp dir for the life of this page so the stylesheet can load the files.
+            if not hasattr(self, "_spin_arrow_dir"):
+                self._spin_arrow_dir = QTemporaryDir()
+            path = Path(self._spin_arrow_dir.path()) / ("up.png" if up else "down.png")
+            pm.save(str(path), "PNG")
+            return path.as_posix()
+
+        up_arrow = _arrow_png(True)
+        down_arrow = _arrow_png(False)
+
         self.setStyleSheet(f"""
             QLabel#settingsHeading {{ color: {c['text_primary']};
                 font-size: 13pt; font-weight: 600; }}
@@ -162,11 +187,38 @@ class SettingsPage(QWidget):
             QLabel {{ color: {c['text_primary']}; font-size: 10.5pt; }}
             QComboBox, QLineEdit, QSpinBox {{ color: {c['text_primary']};
                 background-color: {c['list_bg']}; border: 1px solid {c['btn_border']};
-                border-radius: 8px; padding: 5px 10px; font-size: 10.5pt; }}
+                border-radius: 8px; padding: 5px 4px 5px 10px; font-size: 10.5pt; }}
             QComboBox:focus, QLineEdit:focus, QSpinBox:focus {{
                 border: 1px solid {c['accent_blue']}; }}
             QComboBox QAbstractItemView {{ color: {c['text_primary']};
                 background-color: {c['list_bg']}; }}
+            QSpinBox::up-button {{
+                subcontrol-origin: border;
+                subcontrol-position: top right;
+                width: 28px;
+                border-left: 1px solid {c['btn_border']};
+                border-top-right-radius: 7px;
+                background: {c['btn_bg']};
+            }}
+            QSpinBox::down-button {{
+                subcontrol-origin: border;
+                subcontrol-position: bottom right;
+                width: 28px;
+                border-left: 1px solid {c['btn_border']};
+                border-bottom-right-radius: 7px;
+                background: {c['btn_bg']};
+            }}
+            QSpinBox::up-button:hover, QSpinBox::down-button:hover {{
+                background-color: {c['accent_blue']};
+            }}
+            QSpinBox::up-arrow {{
+                image: url({up_arrow});
+                width: 16px; height: 10px;
+            }}
+            QSpinBox::down-arrow {{
+                image: url({down_arrow});
+                width: 16px; height: 10px;
+            }}
             QPushButton#resetButton {{ color: {c['text_primary']};
                 background-color: {c['btn_bg']}; border: 1px solid {c['btn_border']};
                 border-radius: 8px; padding: 7px 12px; font-size: 10pt; }}
