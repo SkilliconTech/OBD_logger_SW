@@ -13,7 +13,7 @@ RUN_DURATION_MS = (1000, 86400000)                # 0 also allowed = run continu
 RESPONSE_TIMEOUT_MS = (10, 10000)
 INTERVAL_MS = (10, 3600000)
 
-MAX_REQUESTS = 64
+MAX_REQUESTS = 1000
 MAX_FILE_BYTES = 8192
 
 # service -> how many hex bytes follow it in a request

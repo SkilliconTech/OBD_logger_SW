@@ -143,11 +143,8 @@ class ObdMainWindow(QMainWindow):
         self.act_new.triggered.connect(self.on_new)
         self.act_save = QAction("Export", self)
         self.act_save.setShortcut("Ctrl+S")
-        self.act_save.triggered.connect(self.on_save)
-        self.act_save_as = QAction("Export As...", self)
-        self.act_save_as.setShortcut("Ctrl+Shift+S")
-        self.act_save_as.triggered.connect(self.on_save_as)
-        for a in (self.act_new, self.act_save, self.act_save_as):
+        self.act_save.triggered.connect(self.on_save)      # ask once, then silent
+        for a in (self.act_new, self.act_save):
             self.addAction(a)
 
     # ------------------------------------------------------------------
@@ -212,30 +209,19 @@ class ObdMainWindow(QMainWindow):
         self.new_button.clicked.connect(self.on_new)
         self.save_button = QPushButton("Export")
         self.save_button.setObjectName("saveButton")
-        self.save_button.clicked.connect(self.on_save)
-        self.save_arrow_button = QPushButton("▾")
-        self.save_arrow_button.setObjectName("saveArrowButton")
-        self.save_arrow_button.setFixedWidth(30)
-        self.save_arrow_button.clicked.connect(self._show_save_menu)
-        self._save_menu = QMenu(self)
-        self._save_menu.addAction(self.act_save_as)
+        self.save_button.clicked.connect(self.on_save_as)   # always asks for a path
         self.import_button = QPushButton("Import")
         self.import_button.setObjectName("importButton")
         self.import_button.clicked.connect(self.on_import)
-        for b in (self.new_button, self.save_button,
-                  self.save_arrow_button, self.import_button):
+        for b in (self.new_button, self.save_button, self.import_button):
             b.setCursor(Qt.PointingHandCursor)
             b.setMinimumHeight(40)
 
-        save_group = QHBoxLayout()
-        save_group.setSpacing(0)
-        save_group.addWidget(self.save_button, 1)
-        save_group.addWidget(self.save_arrow_button)
         btn_row = QHBoxLayout()
         btn_row.setSpacing(10)
         btn_row.addWidget(self.new_button)
         btn_row.addWidget(self.import_button)
-        btn_row.addLayout(save_group)
+        btn_row.addWidget(self.save_button)
         il.addLayout(btn_row)
         lay.addWidget(self.imported_section, 0)
         lay.addSpacing(12)
@@ -885,9 +871,6 @@ class ObdMainWindow(QMainWindow):
     def on_logo_clicked(self):
         QDesktopServices.openUrl(QUrl(COMPANY_URL))
 
-    def _show_save_menu(self):
-        self._save_menu.exec(self.save_arrow_button.mapToGlobal(
-            self.save_arrow_button.rect().bottomLeft()))
 
     # ------------------------------------------------------------------
     # Theme
@@ -921,22 +904,6 @@ class ObdMainWindow(QMainWindow):
             QPushButton#newButton:hover {{ border: 1px solid {c['accent_blue']}; }}
             QPushButton#saveButton, QPushButton#importButton {{
                 font-family: "Segoe UI"; font-size: 9pt; font-weight: 700; }}
-            QPushButton#saveButton {{
-                padding: 0 8px; border-top-right-radius: 0px;
-                border-bottom-right-radius: 0px; }}
-            QPushButton#saveArrowButton {{
-                padding: 0px; font-size: 11pt; font-weight: 700; border-left: none;
-                border-top-left-radius: 0px; border-bottom-left-radius: 0px; }}
-            QPushButton#saveArrowButton:hover {{
-                border: 1px solid {c['accent_blue']}; border-left: none; }}
-        """)
-        self._save_menu.setStyleSheet(f"""
-            QMenu {{ background-color: {c['bg_panel']}; color: {c['text_primary']};
-                     border: 1px solid {c['btn_border']}; padding: 6px; }}
-            QMenu::item {{ padding: 8px 28px 8px 14px; border-radius: 6px;
-                           font-size: 11pt; }}
-            QMenu::item:selected {{ background-color: {c['accent_blue']};
-                                    color: #FFFFFF; }}
         """)
         self.config_section.setStyleSheet(
             f"#configSection {{ background-color: {c['bg_main']};"
@@ -955,7 +922,7 @@ class ObdMainWindow(QMainWindow):
                            border-radius: {RADIUS_SM}px; }}
                 #{name}:hover {{ border: 1px solid {c['accent_blue']}; }}
             """)
-            
+
         # Logo: original gold colours in both themes, no border or background.
         self.brand_btn.setIcon(logo_icon(white=False))
         self.brand_btn.setStyleSheet("""
