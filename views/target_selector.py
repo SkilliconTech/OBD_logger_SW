@@ -126,3 +126,4 @@ class TargetSelector(QWidget):
             QComboBox QAbstractItemView {{ color: {c['text_primary']};
                 background-color: {c['list_bg']}; }}
         """)
+        self.send_button.apply_theme(c)   # ← add this line
