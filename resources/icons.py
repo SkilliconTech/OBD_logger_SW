@@ -99,10 +99,21 @@ def trash_pixmap(size: int = 64) -> QPixmap:
     return pm
 
 
-def logo_icon() -> QIcon:
-    """Company logo, loaded from the base64 image in resources/logo_data.py."""
+def logo_icon(white: bool = False) -> QIcon:
+    """Company logo from resources/logo_data.py.
+    Pass white=True for a white version (dark theme)."""
     pm = QPixmap()
     pm.loadFromData(base64.b64decode(_LOGO_B64))
+    if white:
+        # Keep alpha, turn all visible pixels white
+        tinted = QPixmap(pm.size())
+        tinted.fill(Qt.transparent)
+        painter = QPainter(tinted)
+        painter.drawPixmap(0, 0, pm)
+        painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
+        painter.fillRect(tinted.rect(), QColor("#FFFFFF"))
+        painter.end()
+        pm = tinted
     return QIcon(pm)
 
 def checked_indicator_pixmap(size=16, color="#3B82F6"):

@@ -910,12 +910,28 @@ class ObdMainWindow(QMainWindow):
                            border-radius: {RADIUS_SM}px; }}
                 #{name}:hover {{ border: 1px solid {c['accent_blue']}; }}
             """)
-        self.brand_btn.setStyleSheet("""
-            #brandButton { background-color: transparent; border: none;
-                           padding: 6px 12px; }
-            #brandButton:hover, #brandButton:pressed {
-                background-color: transparent; border: none; }
-        """)
+        # Logo: original colours in light mode; white on same chrome as "?" in dark mode.
+        if self.dark_mode:
+            self.brand_btn.setIcon(logo_icon(white=True))
+            self.brand_btn.setStyleSheet(f"""
+                #brandButton {{
+                    background-color: {c['bg_panel']};
+                    border: 1px solid {c['border']};
+                    border-radius: {RADIUS_SM}px;
+                    padding: 6px 12px;
+                }}
+                #brandButton:hover {{
+                    border: 1px solid {c['accent_blue']};
+                }}
+            """)
+        else:
+            self.brand_btn.setIcon(logo_icon(white=False))
+            self.brand_btn.setStyleSheet("""
+                #brandButton { background-color: transparent; border: none;
+                               padding: 6px 12px; }
+                #brandButton:hover, #brandButton:pressed {
+                    background-color: transparent; border: none; }
+            """)
         self.theme_toggle.setIcon(make_theme_icon(self.dark_mode, c["toggle_icon"]))
 
         self.content_panel.setStyleSheet(

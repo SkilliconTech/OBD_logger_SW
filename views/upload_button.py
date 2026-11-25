@@ -12,8 +12,8 @@ from PySide6.QtWidgets import QPushButton
 
 from resources.theme import LIGHT
 
-RESULT_SECONDS = 5
-BUTTON_SIZE = 42            # same as help "?" button
+RESULT_SECONDS = 3
+BUTTON_SIZE = 38            # same as help "?" button
 RADIUS = 8                  # same border-radius as help button
 
 
@@ -32,8 +32,8 @@ class UploadButton(QPushButton):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._state = "idle"
-        self._bg = LIGHT["btn_bg"]
-        self._border = LIGHT["btn_border"]
+        self._bg = LIGHT["bg_panel"]        # ← same as ?
+        self._border = LIGHT["border"]      # ← same as ?
         self._border_hover = LIGHT["accent_blue"]
         self.setFixedSize(QSize(BUTTON_SIZE, BUTTON_SIZE))
         self.setCursor(Qt.PointingHandCursor)
@@ -43,8 +43,10 @@ class UploadButton(QPushButton):
         self._reset_timer.timeout.connect(lambda: self.set_state("idle"))
 
     def apply_theme(self, c):
-        self._bg = c["btn_bg"]
-        self._border = c["btn_border"]
+        self._bg = c["bg_panel"]
+        self._border = c["border"]
+        _ICON["idle"] = c["text_primary"]
+        _ICON["disabled"] = c["text_secondary"]
         self._border_hover = c["accent_blue"]
         _ICON["idle"] = c["text_primary"]
         self.update()
@@ -81,7 +83,7 @@ class UploadButton(QPushButton):
     def _draw_upload_glyph(self, painter, color):
         w, h = self.width(), self.height()
         cx, cy = w / 2, h / 2
-        s = min(w, h) * 0.42
+        s = min(w, h) * 0.35
 
         pen = QPen(color)
         pen.setWidthF(max(1.6, s * 0.12))
