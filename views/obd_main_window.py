@@ -1,3 +1,4 @@
+import copy
 import os
 from dataclasses import replace
 from unittest import result
@@ -5,6 +6,7 @@ from services.config_file import import_config, save_config_file, InvalidConfigE
 from services.config_importer import selection_from_config
 from services.config_serializer import ConfigFormatError, to_json_text
 from services.config_validator import validate
+from services.file_names import clean_file_name, DEFAULT_NAME, EXTENSION
 
 from PySide6.QtCore import Qt, QSize, QRect, QEvent, QTimer, QUrl, QThreadPool
 from PySide6.QtGui import (
@@ -38,6 +40,11 @@ from views.problems_bar import ProblemsBar
 
 APP_TITLE = "OBD Configuration"
 COMPANY_URL = "https://skillicon.in/"
+
+ROW_ID = Qt.UserRole + 1      # a number that identifies each row of the files list
+ROW_NAME = Qt.UserRole + 2    # the last accepted name of a row (to spot a new edit)
+# What makes up one configuration on the screen. Each row of the files list remembers these.
+SCREEN_STATE = ("selected_modes", "selected_pids", "pid_intervals", "frame_02", "save_path")
 
 
 class NewFileDelegate(QStyledItemDelegate):
@@ -86,6 +93,10 @@ class ObdMainWindow(QMainWindow):
         self.save_path = ""                     # file chosen with Save / Save As
         self.base_config = LoggerConfig()      # the settings (bitrate, IDs, timings)
         self.frame_02 = "00"                   # freeze frame number for Mode 02
+        self._row_states = {}                  # row id -> the configuration it had when you left it
+        self._current_row_id = None            # the row whose configuration is on the screen
+        self._next_row_id = 1
+        self._renaming = False                 # True while the code itself changes a row's text
         self.mtp_device = ""                   # logger chosen over USB, e.g. "OBD_1757338"
         self._send_task = None
         self.setWindowTitle(APP_TITLE)
@@ -167,6 +178,7 @@ class ObdMainWindow(QMainWindow):
         self.imported_list.setMaximumHeight(120)
         self.imported_list.setItemDelegate(NewFileDelegate(self.imported_list))
         self.imported_list.itemClicked.connect(self.on_file_clicked)
+        self.imported_list.itemChanged.connect(self._on_row_edited)
         sc = QShortcut(QKeySequence("Delete"), self.imported_list)
         sc.setContext(Qt.WidgetShortcut)
         sc.activated.connect(self.on_delete_selected_file)
@@ -526,16 +538,31 @@ class ObdMainWindow(QMainWindow):
     def _add_file_row(self, path):
         item = QListWidgetItem(os.path.basename(path))
         item.setData(Qt.UserRole, path)
+        item.setData(ROW_ID, self._new_row_id())
         self.imported_list.addItem(item)
         self.imported_list.setCurrentItem(item)
         self.imported_files.append(path)
+        self._current_row_id = item.data(ROW_ID)          # this file is now on the screen
 
     def on_file_clicked(self, item):
+        """Show the configuration of the clicked row: what you left on it earlier, or its file."""
+        row_id = item.data(ROW_ID)
+        if row_id == self._current_row_id:
+            return                                # already on the screen
+        state = self._row_states.get(row_id)
         path = item.data(Qt.UserRole)
-        if path:                                  # a real file: load it again
-            self._load_config_file(path)
-            return
-        self.clear_page_area()
+        if state is not None:                     # you were here before: bring it back
+            self._leave_current_row()
+            self._reset_screen()
+            self._apply_state(state)
+        elif path:                                # a file that was not opened yet: read it
+            if not self._load_config_file(path):
+                self._select_current_row()        # it could not be read: stay where we were
+                return
+        else:                                     # a new row nobody has filled yet
+            self._leave_current_row()
+            self._reset_screen()
+        self._current_row_id = row_id
         self.statusBar().showMessage(f"Opened {item.text()}", 3000)
 
     def on_delete_selected_file(self):
@@ -552,7 +579,12 @@ class ObdMainWindow(QMainWindow):
         self.imported_list.takeItem(self.imported_list.row(item))
         if path in self.imported_files:
             self.imported_files.remove(path)
-        self.on_new()                   # back to the default configuration
+        row_id = item.data(ROW_ID)
+        self._row_states.pop(row_id, None)
+        if row_id == self._current_row_id or self._current_row_id is None:
+            self._current_row_id = None           # the removed row was on the screen
+            self._reset_screen()                  # back to the default configuration
+            self.imported_list.setCurrentRow(-1)
         self.statusBar().showMessage(f"Removed '{name}'", 3000)
     def eventFilter(self, obj, event):
         """Click on the trash icon of the selected row removes the file."""
@@ -576,7 +608,119 @@ class ObdMainWindow(QMainWindow):
     # Button handlers: put your own logic here
     # ------------------------------------------------------------------
     def on_new(self):
-        """Start again: settings, modes, PIDs and intervals go back to the defaults."""
+        """New button: remember the row on the screen, start a clean configuration and add a
+        row where the file name is typed."""
+        self._leave_current_row()
+        self._reset_screen()
+        self._add_new_row()
+
+    # ---- rows of the files list: each one remembers its own configuration --------------
+    def _new_row_id(self):
+        row_id = self._next_row_id
+        self._next_row_id += 1
+        return row_id
+
+    def _row_item(self, row_id):
+        for i in range(self.imported_list.count()):
+            item = self.imported_list.item(i)
+            if item.data(ROW_ID) == row_id:
+                return item
+        return None
+
+    def _find_row(self, path):
+        for i in range(self.imported_list.count()):
+            item = self.imported_list.item(i)
+            if item.data(Qt.UserRole) == path:
+                return item
+        return None
+
+    def _select_current_row(self):
+        """Move the highlight of the list back to the row that is on the screen."""
+        item = self._row_item(self._current_row_id)
+        if item is not None:
+            self.imported_list.setCurrentItem(item)
+        else:
+            self.imported_list.setCurrentRow(-1)
+
+    def _capture_state(self):
+        """Everything on the screen that belongs to one configuration."""
+        state = {"settings": replace(self.base_config)}
+        for name in SCREEN_STATE:
+            if hasattr(self, name):
+                state[name] = copy.deepcopy(getattr(self, name))
+        return state
+
+    def _apply_state(self, state):
+        """Show a remembered configuration (call _reset_screen() first)."""
+        self.settings_page.set_settings(state["settings"])
+        self.base_config = replace(state["settings"])
+        for name in SCREEN_STATE:
+            if name in state:
+                setattr(self, name, copy.deepcopy(state[name]))
+        self.new_tree.set_checked_modes(self.selected_modes)
+        for mode, chosen in self.selected_pids.items():
+            page = self.pages.get(f"Mode ${mode}")
+            if page is not None:
+                page.set_selection(list(chosen), self.frame_02)
+        self._refresh_pages_enabled()
+        self._sync_config()
+
+    def _leave_current_row(self):
+        """Remember the configuration of the row on the screen before another one replaces it."""
+        if self._current_row_id is not None:
+            self._row_states[self._current_row_id] = self._capture_state()
+
+    def _add_new_row(self):
+        """A row for the new configuration. The file name is typed straight into the list."""
+        item = QListWidgetItem(DEFAULT_NAME + EXTENSION)
+        item.setData(Qt.UserRole, "")                      # no file on disk yet
+        item.setData(ROW_ID, self._new_row_id())
+        item.setData(ROW_NAME, item.text())
+        item.setFlags(item.flags() | Qt.ItemIsEditable)
+        self.imported_list.addItem(item)
+        self.imported_list.setCurrentItem(item)
+        self.imported_list.scrollToItem(item)
+        self._current_row_id = item.data(ROW_ID)
+        self.imported_list.editItem(item)                  # type the file name now
+
+    def _on_row_edited(self, item):
+        """A name was typed into a new row: make it a safe, unique .json name."""
+        if self._renaming or not (item.flags() & Qt.ItemIsEditable):
+            return
+        if item.text() == item.data(ROW_NAME):
+            return                                         # nothing new was typed
+        taken = [self.imported_list.item(i).text()
+                 for i in range(self.imported_list.count())
+                 if self.imported_list.item(i).data(ROW_ID) != item.data(ROW_ID)]
+        name = clean_file_name(item.text(), taken)
+        self._renaming = True
+        item.setText(name)
+        item.setData(ROW_NAME, name)
+        self._renaming = False
+        self.statusBar().showMessage(f"File name: {name}", 3000)
+
+    def _suggested_file_name(self):
+        """The name typed in the list for a new row, otherwise config.json."""
+        item = self._row_item(self._current_row_id)
+        if item is not None and not item.data(Qt.UserRole):
+            return item.text()
+        return "config.json"
+
+    def _link_row_to_file(self, path):
+        """After the first export, the new row stands for the file that was written."""
+        item = self._row_item(self._current_row_id)
+        if item is None or item.data(Qt.UserRole):
+            return
+        self._renaming = True
+        item.setFlags(item.flags() & ~Qt.ItemIsEditable)   # the name is now the file's name
+        item.setData(Qt.UserRole, path)
+        item.setText(os.path.basename(path))
+        self._renaming = False
+        if path not in self.imported_files:
+            self.imported_files.append(path)
+
+    def _reset_screen(self):
+        """Settings, modes, PIDs and intervals go back to the defaults."""
         self.settings_page.set_settings(LoggerConfig())
         self.base_config = LoggerConfig()
         self.frame_02 = "00"
@@ -603,11 +747,12 @@ class ObdMainWindow(QMainWindow):
 
     def on_save_as(self):
         """Always ask for a path."""
-        start = self.save_path or "config.json"
+        start = self.save_path or self._suggested_file_name()
         path, _ = QFileDialog.getSaveFileName(
             self, "Export config.json", start, "JSON files (*.json);;All files (*)")
         if path and self._write_config(path):
             self.save_path = path
+            self._link_row_to_file(path)
 
     def _write_config(self, path):
         """Writes the file. Returns True when it worked."""
@@ -628,9 +773,14 @@ class ObdMainWindow(QMainWindow):
         path, _ = QFileDialog.getOpenFileName(
             self, "Import config.json", "", "Config files (*.json);;All files (*)")
         if path and self._load_config_file(path):
-            if path not in self.imported_files:
+            if path in self.imported_files:           # already listed: that row shows the fresh file
+                item = self._find_row(path)
+                if item is not None:
+                    self._row_states.pop(item.data(ROW_ID), None)
+                    self._current_row_id = item.data(ROW_ID)
+                    self.imported_list.setCurrentItem(item)
+            else:
                 self._add_file_row(path)
-
     def _load_config_file(self, path):
         """Read a config.json and fill in the screens. Returns True when it worked."""
         name = os.path.basename(path)
@@ -648,7 +798,8 @@ class ObdMainWindow(QMainWindow):
             return False
 
         selection = selection_from_config(config)
-        self.on_new()                                  # start from a clean screen
+        self._leave_current_row()                      # remember the row we are leaving
+        self._reset_screen()                           # start from a clean screen
         self.settings_page.set_settings(config)
         self.base_config = replace(config, requests=[])
         self.new_tree.set_checked_modes(selection.modes)
@@ -668,7 +819,7 @@ class ObdMainWindow(QMainWindow):
             QMessageBox.information(
                 self, "Unsupported requests were not imported",
                 "These requests are not supported by this tool, so they were NOT "
-                "imported and will not be in config.json when it is exported:\n" + lines)      
+                "imported and will not be in config.json when it is saved:\n" + lines)      
             self.problems_bar.show_idle(
                 f"Imported {name}. Not exported yet: change something to export.")
         else:
@@ -779,6 +930,9 @@ class ObdMainWindow(QMainWindow):
             QListWidget::item:hover {{ background-color: {c['border']}; }}
             QListWidget::item:selected {{ background-color: {c['accent_blue']};
                 color: #FFFFFF; }}
+            QListWidget QLineEdit {{ color: {c['text_primary']};
+                background-color: {c['list_bg']}; border: 1px solid {c['accent_blue']};
+                border-radius: 5px; padding: 0px 6px; }}
         """)
         self.new_tree.setStyleSheet(
             "QTreeWidget { background-color: transparent; border: none; outline: 0; }")
