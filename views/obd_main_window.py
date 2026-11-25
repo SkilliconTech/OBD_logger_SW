@@ -672,7 +672,7 @@ class ObdMainWindow(QMainWindow):
 
     def _add_new_row(self):
         """A row for the new configuration. The file name is typed straight into the list."""
-        item = QListWidgetItem(DEFAULT_NAME + EXTENSION)
+        item = QListWidgetItem()
         item.setData(Qt.UserRole, "")                      # no file on disk yet
         item.setData(ROW_ID, self._new_row_id())
         item.setData(ROW_NAME, item.text())
