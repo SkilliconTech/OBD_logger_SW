@@ -37,7 +37,7 @@ class TargetSelector(QWidget):
         self.send_button.setVisible(False)
         self.send_button.clicked.connect(lambda: self.send_requested.emit())
 
-        lay.addWidget(QLabel("Logger:"))
+        lay.addWidget(QLabel("Device:"))
         lay.addWidget(self.drive_combo)
         lay.addWidget(self.send_button)
 
