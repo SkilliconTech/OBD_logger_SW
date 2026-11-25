@@ -92,7 +92,12 @@ class TargetSelector(QWidget):
         for value, text in entries:
             self.drive_combo.addItem(text, value)
         index = self.drive_combo.findData(previous)
-        self.drive_combo.setCurrentIndex(index if index >= 0 else 0)
+        if index >= 0:
+            self.drive_combo.setCurrentIndex(index)
+        elif self.drive_combo.count() > 1:
+            self.drive_combo.setCurrentIndex(1)   # first real device
+        else:
+            self.drive_combo.setCurrentIndex(0)   # only "No logger drive"
         self.drive_combo.blockSignals(False)
         self._update_send_button()
         if self.current_drive() != previous:      # the chosen card or logger went away
@@ -107,12 +112,17 @@ class TargetSelector(QWidget):
         """Turn the Upload image green (sent and checked) or red (failed)."""
         self.send_button.show_result(ok)
 
+    def storage_ready(self):
+        """True when the selected MTP logger currently exposes its SD card."""
+        current = self.current_drive()
+        return any(MTP_PREFIX + d.name == current and d.storage_ready for d in self._mtp)
+
     def _update_send_button(self):
         current = self.current_drive()
         is_usb = current.startswith(MTP_PREFIX)
-        ready = any(MTP_PREFIX + d.name == current and d.storage_ready for d in self._mtp)
+        ready = self.storage_ready()
         self.send_button.setVisible(is_usb)
-        self.send_button.setEnabled(is_usb and ready and not self._sending)
+        self.send_button.setEnabled(is_usb and not self._sending)
         self.send_button.setToolTip(
             "Copy config.json to the SD card of the logger" if ready else
             "The SD card is not available. The logger shows it only after logging stops.")

@@ -438,7 +438,22 @@ class ObdMainWindow(QMainWindow):
 
     def on_send_to_logger(self):
         """Send config.json to the logger's SD card over USB, then check it."""
+        drive = self.target_selector.current_drive()
+        if drive.startswith(MTP_PREFIX):
+            self.mtp_device = drive[len(MTP_PREFIX):]
         if not self.mtp_device:
+            QMessageBox.information(
+                self, "No logger selected",
+                "Select a USB logger in the Device dropdown, then click Upload.")
+            return
+        if not self.target_selector.storage_ready():
+            QMessageBox.warning(
+                self, "SD card not available",
+                f'The logger "{self.mtp_device}" is connected, but its SD card '
+                "is not available yet.\n\n"
+                "The logger only shows the SD card after logging stops and "
+                "buffered data is saved. Stop logging on the device, wait a "
+                "moment, then try Upload again.")
             return
         config = self._build_config()
         issues = validate(config)
@@ -446,11 +461,17 @@ class ObdMainWindow(QMainWindow):
             lines = "\n".join(f"- {i.field}: {i.message} {i.fix}" for i in issues[:6])
             QMessageBox.warning(self, "Cannot send yet", lines)
             return
+        answer = QMessageBox.question(
+            self, "Send to logger",
+            f'Send the current config.json to "{self.mtp_device}"?',
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+        if answer != QMessageBox.Yes:
+            return
         self.target_selector.set_sending(True)
         self.statusBar().showMessage(f"Sending config.json to {self.mtp_device} ...")
         task = MtpSendTask(self.mtp_device, to_json_text(config))
         task.signals.done.connect(self._on_send_done)
-        self._send_task = task                    # keep it alive until it reports
+        self._send_task = task
         QThreadPool.globalInstance().start(task)
 
     def _on_send_done(self, result):
