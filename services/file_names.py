@@ -1,7 +1,7 @@
 """Turns what the user types into a safe config file name. Pure Python, no UI code."""
 import re
 
-DEFAULT_NAME = "new_config"
+DEFAULT_NAME = "config"
 EXTENSION = ".json"
 MAX_LENGTH = 60
 

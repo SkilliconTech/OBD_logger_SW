@@ -693,7 +693,8 @@ class ObdMainWindow(QMainWindow):
 
     def _add_new_row(self):
         """A row for the new configuration. The file name is typed straight into the list."""
-        item = QListWidgetItem()
+        taken = [self.imported_list.item(i).text() for i in range(self.imported_list.count())]
+        item = QListWidgetItem(clean_file_name(DEFAULT_NAME, taken))   # config.json
         item.setData(Qt.UserRole, "")                      # no file on disk yet
         item.setData(ROW_ID, self._new_row_id())
         item.setData(ROW_NAME, item.text())
@@ -703,6 +704,9 @@ class ObdMainWindow(QMainWindow):
         self.imported_list.scrollToItem(item)
         self._current_row_id = item.data(ROW_ID)
         self.imported_list.editItem(item)                  # type the file name now
+        editor = self.focusWidget()                        # the name box that just opened
+        if editor is not None and hasattr(editor, "selectAll"):
+            editor.selectAll()                             # typing replaces config.json
 
     def _on_row_edited(self, item):
         """A name was typed into a new row: make it a safe, unique .json name."""

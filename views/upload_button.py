@@ -13,7 +13,7 @@ from PySide6.QtWidgets import QPushButton
 from resources.theme import LIGHT
 
 RESULT_SECONDS = 3
-BUTTON_SIZE = 38            # same as help "?" button
+BUTTON_SIZE = 42            # same as help "?" button
 RADIUS = 8                  # same border-radius as help button
 
 
