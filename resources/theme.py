@@ -31,3 +31,5 @@ RADIUS_SM = 8
 RADIUS_LG = 14
 
 FONT_FAMILY = "Segoe UI"
+
+ERROR_RED = "#D64545"        # same red as the failed Upload state

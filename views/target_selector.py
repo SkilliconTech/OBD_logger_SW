@@ -29,7 +29,7 @@ class TargetSelector(QWidget):
         lay.setSpacing(8)
 
         self.drive_combo = QComboBox()
-        self.drive_combo.setMinimumWidth(150)
+        self.drive_combo.setMinimumWidth(80)
         self.drive_combo.setToolTip("Logger SD card drive, or the logger plugged in over USB")
         self.drive_combo.setSizeAdjustPolicy(QComboBox.AdjustToContents)
         self.drive_combo.currentIndexChanged.connect(self._on_drive_index)

@@ -7,10 +7,11 @@ from services.config_importer import selection_from_config
 from services.config_serializer import ConfigFormatError, to_json_text
 from services.config_validator import validate
 from services.file_names import clean_file_name, DEFAULT_NAME, EXTENSION
+from resources.theme import LIGHT, DARK, RADIUS_SM, RADIUS_LG, FONT_FAMILY, ERROR_RED
 
-from PySide6.QtCore import Qt, QSize, QRect, QEvent, QTimer, QUrl, QThreadPool
+from PySide6.QtCore import Qt, QSize, QRect, QRectF, QEvent, QTimer, QUrl, QThreadPool
 from PySide6.QtGui import (
-    QFont, QColor, QAction, QShortcut, QKeySequence, QPainter, QDesktopServices
+    QFont, QColor, QAction, QShortcut, QKeySequence, QPainter, QDesktopServices, QPen
 )
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QLabel, QPushButton, QFrame, QListWidget,
@@ -68,13 +69,32 @@ class NewFileDelegate(QStyledItemDelegate):
                      row_rect.center().y() - s // 2 + 1, s, s)
 
     def paint(self, painter, option, index):
+        unsaved = not index.data(Qt.UserRole)                  # never saved
+        selected = bool(option.state & QStyle.State_Selected)
+
+        if unsaved:                                            # red, selected or not
+            painter.save()
+            painter.setRenderHint(QPainter.Antialiasing, True)
+            bg = QColor(ERROR_RED)
+            bg.setAlpha(70 if selected else 40)                # a bit stronger when selected
+            painter.setPen(QPen(QColor(ERROR_RED), 1.2) if selected else Qt.NoPen)
+            painter.setBrush(bg)
+            painter.drawRoundedRect(QRectF(option.rect).adjusted(0.6, 0.6, -0.6, -0.6), 5, 5)
+            painter.setPen(QColor(ERROR_RED))                  # red text
+            painter.setFont(option.font)
+            text_rect = option.rect.adjusted(12, 0, -40, 0)    # same padding as the stylesheet
+            text = painter.fontMetrics().elidedText(
+                str(index.data(Qt.DisplayRole) or ""), Qt.ElideRight, text_rect.width())
+            painter.drawText(text_rect, Qt.AlignVCenter | Qt.AlignLeft, text)
+            painter.restore()
+            return
+
         super().paint(painter, option, index)
-        if (option.state & QStyle.State_Selected) and index.data(Qt.UserRole):
+        if selected:                                           # trash icon (unchanged)
             painter.save()
             painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
             painter.drawPixmap(self.trash_rect(option.rect), trash_pixmap())
             painter.restore()
-
 
 class ObdMainWindow(QMainWindow):
     """UI shell only: sidebar (files + tree), top bar, page area, theme.
@@ -935,28 +955,15 @@ class ObdMainWindow(QMainWindow):
                            border-radius: {RADIUS_SM}px; }}
                 #{name}:hover {{ border: 1px solid {c['accent_blue']}; }}
             """)
-        # Logo: original colours in light mode; white on same chrome as "?" in dark mode.
-        if self.dark_mode:
-            self.brand_btn.setIcon(logo_icon(white=True))
-            self.brand_btn.setStyleSheet(f"""
-                #brandButton {{
-                    background-color: {c['bg_panel']};
-                    border: 1px solid {c['border']};
-                    border-radius: {RADIUS_SM}px;
-                    padding: 6px 12px;
-                }}
-                #brandButton:hover {{
-                    border: 1px solid {c['accent_blue']};
-                }}
-            """)
-        else:
-            self.brand_btn.setIcon(logo_icon(white=False))
-            self.brand_btn.setStyleSheet("""
-                #brandButton { background-color: transparent; border: none;
-                               padding: 6px 12px; }
-                #brandButton:hover, #brandButton:pressed {
-                    background-color: transparent; border: none; }
-            """)
+            
+        # Logo: original gold colours in both themes, no border or background.
+        self.brand_btn.setIcon(logo_icon(white=False))
+        self.brand_btn.setStyleSheet("""
+            #brandButton { background-color: transparent; border: none;
+                           padding: 6px 12px; }
+            #brandButton:hover, #brandButton:pressed {
+                background-color: transparent; border: none; }
+        """)
         self.theme_toggle.setIcon(make_theme_icon(self.dark_mode, c["toggle_icon"]))
 
         self.content_panel.setStyleSheet(
