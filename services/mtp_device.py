@@ -1,11 +1,12 @@
 """Finds the logger when it is plugged in over USB as an MTP portable device and copies
-config.json to its SD card, then reads the file back to check it. Windows only. No UI code.
+config.json to the CONFIG folder of its SD card, then reads the file back to check it.
+Windows only. No UI code.
 
 An MTP device has no drive letter, so normal file writes cannot reach it. This module uses
 the Windows Shell (the same engine Explorer uses) through PowerShell, so it needs no extra
 Python package.
 
-Device:  This PC > OBD_<factory number> > SD card > config.json   (storage root, no folder)
+Device:  This PC > OBD_<factory number> > SD card > CONFIG > config.json
 """
 import hashlib
 import os
@@ -63,7 +64,7 @@ foreach ($item in $shell.Namespace(17).Items()) {
 """
 
 _SEND_SCRIPT = r"""
-param([string]$Device, [string]$Storage, [string]$Source, [string]$ExpectedHash, [int]$TimeoutSec)
+param([string]$Device, [string]$Storage, [string]$Folder, [string]$Source, [string]$ExpectedHash, [int]$TimeoutSec)
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $ErrorActionPreference = 'Stop'
 $shell = New-Object -ComObject Shell.Application
@@ -86,10 +87,16 @@ function Find-Storage() {
     if (-not $store) { Finish 'NOSTORAGE' $Device }
     return $store
 }
+function Find-Target() {                      # the CONFIG folder inside the SD card
+    $store = Find-Storage
+    $dir = Find-Child ($store.GetFolder.Items()) $Folder
+    if ((-not $dir) -or (-not $dir.IsFolder)) { Finish 'NOFOLDER' $Folder }
+    return $dir
+}
 
-# 1. copy into the SD card root (4 = no progress box, 16 = yes to all; Windows may still ask)
-$store = Find-Storage
-$store.GetFolder.CopyHere($Source, 20)
+# 1. copy into SD card / CONFIG (4 = no progress box, 16 = yes to all)
+$target = Find-Target
+$target.GetFolder.CopyHere($Source, 20)
 
 # 2. wait until the file on the device is byte-for-byte the file we sent
 $deadline = (Get-Date).AddSeconds($TimeoutSec)
@@ -97,9 +104,9 @@ $reason = 'The file did not appear on the logger.'
 $verified = $false
 while ((Get-Date) -lt $deadline) {
     Start-Sleep -Milliseconds 1000
-    $store = Find-Storage                      # also notices an unplugged device
+    $target = Find-Target                      # also notices an unplugged device
     $file = $null
-    foreach ($f in $store.GetFolder.Items()) {
+    foreach ($f in $target.GetFolder.Items()) {
         if ($f.IsFolder) { continue }
         # Explorer may hide the .json extension, so accept both names
         if (($f.Name -eq 'config.json') -or ($f.Name -eq 'config')) { $file = $f; break }
@@ -190,6 +197,10 @@ def _result_from_output(device, code, output, error):
         return TransferResult(False, f"The {STORAGE_NAME} on {device} is not available. "
                                      "The logger shows it only after logging stops and "
                                      "buffered data is saved.")
+    if status == "NOFOLDER":
+        return TransferResult(False, f'The "{R.CONFIG_FOLDER}" folder was not found on the '
+                                     f"{STORAGE_NAME} of {device}. Check that the card has a "
+                                     f'"{R.CONFIG_FOLDER}" folder, then try again.')
     if status == "TIMEOUT":
         return TransferResult(False, f"config.json could not be confirmed on the logger. "
                                      f"{detail} If Windows asked to replace the existing "
@@ -199,8 +210,8 @@ def _result_from_output(device, code, output, error):
 
 
 def send_config(device_name, text, timeout_s=TRANSFER_TIMEOUT_S):
-    """Copies `text` to <device>/SD card/config.json, replacing any file there, and reads it
-    back to check the SHA-256. Blocks until done: call it from a background thread."""
+    """Copies `text` to <device>/SD card/CONFIG/config.json, replacing any file there, and
+    reads it back to check the SHA-256. Blocks until done: call it from a background thread."""
     if sys.platform != "win32":
         return TransferResult(False, "Sending to the logger over USB works on Windows only.")
     data = text.encode("utf-8")
@@ -214,7 +225,8 @@ def send_config(device_name, text, timeout_s=TRANSFER_TIMEOUT_S):
             handle.write(data)
         try:
             code, output, error = _run_powershell(
-                _SEND_SCRIPT, [device_name, STORAGE_NAME, source, digest, timeout_s],
+                _SEND_SCRIPT,
+                [device_name, STORAGE_NAME, R.CONFIG_FOLDER, source, digest, timeout_s],
                 timeout=timeout_s + 30)
         except subprocess.TimeoutExpired:
             return TransferResult(False, "The transfer took too long and was stopped. "

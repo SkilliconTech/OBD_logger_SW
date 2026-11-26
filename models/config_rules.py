@@ -15,6 +15,7 @@ INTERVAL_MS = (10, 3600000)
 
 MAX_REQUESTS = 1000
 MAX_FILE_BYTES = 10000000
+CONFIG_FOLDER = "CONFIG"      # folder on the SD card that holds config.json
 
 # service -> how many hex bytes follow it in a request
 REQUEST_SHAPES = {"01": 1, "02": 2, "06": 1, "09": 1, "03": 0, "07": 0, "0A": 0}

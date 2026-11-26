@@ -1,4 +1,6 @@
 """Writes config.json to the places the user chose, in the background. No UI code."""
+from pathlib import Path
+from models import config_rules as R
 from dataclasses import dataclass, field
 
 from services.config_file import export_config
@@ -37,12 +39,17 @@ class ConfigSync:
         if not targets:
             result.no_target = True
             return result
+        
         for target in targets:
             try:
-                result.saved.append(str(export_config(config, target)))
+                folder = target
+                if target == self.drive:                       # logger card: use CONFIG
+                    folder = Path(target) / R.CONFIG_FOLDER
+                    if not folder.is_dir():
+                        raise OSError(f'The "{R.CONFIG_FOLDER}" folder was not found on {target}.')
+                result.saved.append(str(export_config(config, folder)))
             except OSError as error:
                 result.failed.append((target, str(error)))
-        return result
 
 
 def describe_result(result):

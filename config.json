@@ -9,11 +9,1243 @@
   "response_timeout_ms": 70,
   "requests": [
     {
+      "request": "01 01",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 03",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 04",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 05",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 06",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 07",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 08",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 09",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 0A",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 0B",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 0C",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 0D",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 0E",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 0F",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 10",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 11",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 12",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 13",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 14",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 15",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 16",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 17",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 18",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 19",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 1A",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 1B",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 1C",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 1D",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 1E",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 1F",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 21",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 22",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 23",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 24",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 25",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 26",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 27",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 28",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 29",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 2A",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 2B",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 2C",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 2D",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 2E",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 2F",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 30",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 31",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 32",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 33",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 34",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 35",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 36",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 37",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 38",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 39",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 3A",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 3B",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 3C",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 3D",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 3E",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 3F",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 41",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 42",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 43",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 44",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 45",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 46",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 47",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 48",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 49",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 4A",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 4B",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 4C",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 4D",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 4E",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 4F",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 50",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 51",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 52",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 53",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 54",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 55",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 56",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 57",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 58",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 59",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 5A",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 5B",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 5C",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 5D",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 5E",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 5F",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 61",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 62",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 63",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 64",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 65",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 66",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 67",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 68",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 69",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 6A",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 6B",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 6C",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 6D",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 6E",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 6F",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 70",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 71",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 72",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 73",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 74",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 75",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 76",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 77",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 78",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 79",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 7A",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 7B",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 7C",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 7D",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 7E",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 7F",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 81",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 82",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 83",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 84",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 85",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 86",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 87",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 88",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 89",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 8A",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 8B",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 8C",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 8D",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 8E",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 8F",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 90",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 91",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 92",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 93",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 94",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 98",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 99",
+      "interval_ms": 1000
+    },
+    {
+      "request": "01 9C",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 01 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 02 00",
+      "interval_ms": 1000
+    },
+    {
       "request": "02 03 00",
       "interval_ms": 1000
     },
     {
       "request": "02 04 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 05 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 06 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 07 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 08 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 09 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 0A 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 0B 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 0C 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 0D 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 0E 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 0F 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 10 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 11 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 12 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 13 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 14 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 15 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 16 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 17 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 18 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 19 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 1A 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 1B 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 1C 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 1D 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 1E 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 1F 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 21 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 22 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 23 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 24 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 25 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 26 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 27 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 28 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 29 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 2A 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 2B 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 2C 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 2D 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 2E 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 2F 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 30 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 31 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 32 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 33 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 34 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 35 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 36 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 37 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 38 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 39 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 3A 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 3B 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 3C 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 3D 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 3E 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 3F 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 41 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 42 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 43 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 44 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 45 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 46 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 47 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 48 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 49 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 4A 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 4B 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 4C 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 4D 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 4E 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 4F 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 50 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 51 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 52 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 53 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 54 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 55 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 56 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 57 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 58 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 59 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 5A 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 5B 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 5C 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 5D 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 5E 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 5F 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 61 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 62 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 63 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 64 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 65 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 66 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 67 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 68 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 69 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 6A 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 6B 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 6C 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 6D 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 6E 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 6F 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 70 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 71 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 72 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 73 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 74 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 75 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 76 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 77 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 78 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 79 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 7A 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 7B 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 7C 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 7D 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 7E 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 7F 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 81 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 82 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 83 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 84 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 85 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 86 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 87 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 88 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 89 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 8A 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 8B 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 8C 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 8D 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 8E 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 8F 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 90 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 91 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 92 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 93 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 94 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 98 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 99 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "02 9C 00",
+      "interval_ms": 1000
+    },
+    {
+      "request": "09 01",
+      "interval_ms": 1000
+    },
+    {
+      "request": "09 02",
+      "interval_ms": 1000
+    },
+    {
+      "request": "09 03",
+      "interval_ms": 1000
+    },
+    {
+      "request": "09 04",
+      "interval_ms": 1000
+    },
+    {
+      "request": "09 05",
+      "interval_ms": 1000
+    },
+    {
+      "request": "09 06",
+      "interval_ms": 1000
+    },
+    {
+      "request": "09 07",
+      "interval_ms": 1000
+    },
+    {
+      "request": "09 08",
+      "interval_ms": 1000
+    },
+    {
+      "request": "09 09",
+      "interval_ms": 1000
+    },
+    {
+      "request": "09 0A",
+      "interval_ms": 1000
+    },
+    {
+      "request": "09 0B",
+      "interval_ms": 1000
+    },
+    {
+      "request": "09 0C",
+      "interval_ms": 1000
+    },
+    {
+      "request": "09 0D",
+      "interval_ms": 1000
+    },
+    {
+      "request": "09 0E",
+      "interval_ms": 1000
+    },
+    {
+      "request": "09 0F",
+      "interval_ms": 1000
+    },
+    {
+      "request": "09 10",
+      "interval_ms": 1000
+    },
+    {
+      "request": "09 11",
       "interval_ms": 1000
     }
   ]
